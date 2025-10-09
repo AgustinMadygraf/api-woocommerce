@@ -18,6 +18,8 @@ def get_config():
         "CK": os.getenv("CK"),    # consumer key
         "CS": os.getenv("CS"),    # consumer secret
 
+        "MODE": os.getenv("MODE"),  # CLI o FASTAPI
+
         # --- MySQL (si aplica) ---
         "MYSQL_HOST": os.getenv("MYSQL_HOST"),
         "MYSQL_PORT": os.getenv("MYSQL_PORT"),

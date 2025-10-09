@@ -45,6 +45,7 @@ async def wc_system_status(
         description="Método de auth a WooCommerce: 'basic' (user=CK, pass=CS) o 'query' (params).",
     )
 ):
+    " Consulta el estado del sistema WooCommerce y lo devuelve como JSON"
     try:
         cfg = require_config(["URL", "CK", "CS"])
         wc_url = _build_wc_status_url(cfg["URL"])

@@ -29,4 +29,3 @@ async def get_wc_system_status(wc_url: str, ck: str, cs: str, auth: str = "basic
                 params={"consumer_key": ck, "consumer_secret": cs},
             )
     return resp
-
