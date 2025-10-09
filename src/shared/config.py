@@ -28,12 +28,3 @@ def get_config():
         "MYSQL_DATABASE": os.getenv("MYSQL_DATABASE"),
     }
     return config
-
-
-def require_config(keys: list[str]):
-    "Lanza excepción si faltan claves críticas"
-    cfg = get_config()
-    missing = [k for k in keys if not cfg.get(k)]
-    if missing:
-        raise RuntimeError(f"Faltan variables de entorno requeridas: {', '.join(missing)}")
-    return cfg

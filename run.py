@@ -6,24 +6,10 @@ Arranque del servicio con chequeos y logger
 import os
 import sys
 import uvicorn
-from src.shared.config import get_config, require_config
+from src.shared.config import get_config
 from src.shared.logger import get_logger
 
 log = get_logger("datamaq-run")
-
-def _preflight():
-    config = get_config()
-
-    try:
-        require_config(["URL", "CK", "CS"])
-    except RuntimeError as e:
-        log.error(str(e))
-        sys.exit(1)
-
-    # Chequeo de assets front (mismo comportamiento que antes, opcional)
-    static_path = os.getenv("STATIC_PATH") or config.get("STATIC_PATH")
-    if static_path and not os.path.isdir(static_path):
-        log.warning("STATIC_PATH no existe: %s (solo aviso)", static_path)
 
 def run_fastapi():
     """Inicia el servidor FastAPI"""
@@ -35,11 +21,10 @@ def run_fastapi():
         "src.infrastructure.fastapi.static_server:app",
         host=host,
         port=port,
-        reload=os.getenv("UVICORN_RELOAD", "true").lower() == "true"
+        reload="true"
     )
 
 if __name__ == "__main__":
-    _preflight()
     cfg = get_config()
     mode = cfg.get("MODE", "FASTAPI").upper()
 
