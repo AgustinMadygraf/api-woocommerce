@@ -2,7 +2,7 @@
 Path: src/infrastructure/fastapi/dinamic_server.py
 """
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Response
 
 from src.shared.config import get_config
 from src.shared.logger_fastapi import get_logger
@@ -13,7 +13,6 @@ from src.infrastructure.woocommerce.woocommerce_service import (
 from src.interface_adapter.presenters.wc_system_status_presenter import WCSystemStatusPresenter
 from src.entities.wc_system_status import WCSystemStatus
 from src.use_cases.get_wc_variable_products import GetWCVariableProductsUseCase
-from src.use_cases.get_wc_product_variations import GetWCProductVariationsUseCase
 
 router = APIRouter(prefix="", tags=["woocommerce"])
 logger = get_logger("woocommerce-adapter")
@@ -68,7 +67,8 @@ def wc_variable_products(product_type: str = "variable"):
 def wc_product_variations(
     product_id: int,
     per_page: int = Query(10, ge=1, le=100),
-    page: int = Query(1, ge=1)
+    page: int = Query(1, ge=1),
+    response: Response = None
 ):
     "Endpoint para obtener variaciones de un producto variable desde WooCommerce"
     try:
@@ -77,13 +77,12 @@ def wc_product_variations(
         ck = cfg["CK"]
         cs = cfg["CS"]
         params = {"per_page": per_page, "page": page}
-        use_case = GetWCProductVariationsUseCase(
-            lambda pid, *a, **kw: get_product_variations(base_url, ck, cs, pid, params)
-        )
-        logger.debug("Ejecutando caso de uso para obtener variaciones del producto ID %s", product_id)
-        variations = use_case.execute(product_id)
-        logger.debug("Obtenidas %d variaciones para el producto ID %s", len(variations), product_id)
-        return [var.to_dict() for var in variations]
+        # Modifica get_product_variations para que retorne también los headers
+        variations_data, headers = get_product_variations(base_url, ck, cs, product_id, params, return_headers=True)
+        # Reenviar el header X-WP-Total si existe
+        if response is not None and "X-WP-Total" in headers:
+            response.headers["X-WP-Total"] = headers["X-WP-Total"]
+        return [var for var in variations_data]
     except WCServiceError as e:
         logger.error("WooCommerce respondió error %s: %s", e.status_code, str(e.body)[:400])
         raise HTTPException(status_code=e.status_code, detail=e.message) from e

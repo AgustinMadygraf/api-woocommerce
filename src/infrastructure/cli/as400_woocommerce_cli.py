@@ -42,11 +42,11 @@ class AS400WooCommerceCLI:
             for prod in products:
                 try:
                     var_resp = requests.get(
-                        f"{self.api_base}/products/{prod.get('id')}/variations",
+                        f"{self.api_base}/products/{prod.get('id')}/variations?per_page=1",
                         timeout=10
                     )
                     if var_resp.status_code == 200:
-                        total_variaciones = len(var_resp.json())
+                        total_variaciones = var_resp.headers.get("X-WP-Total", "?")
                     else:
                         total_variaciones = "?"
                 except requests.RequestException:
