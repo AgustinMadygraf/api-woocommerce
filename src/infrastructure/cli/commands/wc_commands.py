@@ -53,29 +53,27 @@ class ProductVariationsCommand:
         self.api_client = api_client
         self.ui = ui
 
-    def execute(self, product_id: str) -> str:
-        """Ejecuta el comando y retorna un mensaje de resultado"""
+    def execute(self, product_id: str, page: int = 1, per_page: int = 20) -> tuple:
+        """Ejecuta el comando y retorna un mensaje de resultado y total de páginas"""
         self.ui.print_header("VARIACIONES DE PRODUCTO")
 
         try:
-            variations, status_code, _ = self.api_client.get_product_variations(product_id)
+            variations, status_code, total = self.api_client.get_product_variations(product_id, page=page, per_page=per_page)
 
             if status_code != 200:
-                return f"Error: {status_code} - No se pudieron obtener las variaciones"
+                return f"Error: {status_code} - No se pudieron obtener las variaciones", 1
 
-            # Procesar datos
             rows = WCDataProcessor.process_product_variations(variations)
-
-            # Mostrar tabla
             self.ui.print_variations_table(rows)
 
-            return f"Mostrando {len(variations)} variaciones."
+            total_pages = (total // per_page) + (1 if total % per_page else 0)
+            return f"Mostrando {len(variations)} variaciones.", total_pages
 
         except ConnectionError as e:
-            return str(e)
+            return str(e), 1
         except ValueError as e:
-            return f"Error de valor: {str(e)}"
+            return f"Error de valor: {str(e)}", 1
         except KeyError as e:
-            return f"Error de clave: {str(e)}"
+            return f"Error de clave: {str(e)}", 1
         except TypeError as e:
-            return f"Error de tipo: {str(e)}"
+            return f"Error de tipo: {str(e)}", 1

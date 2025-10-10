@@ -31,40 +31,12 @@ class WCApiClient:
         except requests.RequestException:
             return "?"
 
-    def get_product_variations(self, product_id: str, per_page: int = 50) -> Tuple[List[Dict], int, Optional[int]]:
+    def get_product_variations(self, product_id, page=1, per_page=20):
         "Obtiene variaciones de un producto y devuelve (variaciones, código_estado, total_variaciones)"
-        try:
-            all_variations = []
-            page = 1
-            total = None
-
-            while True:
-                resp = requests.get(
-                    f"{self.api_base}/products/{product_id}/variations?per_page={per_page}&page={page}",
-                    timeout=20
-                )
-
-                if resp.status_code != 200:
-                    return [], resp.status_code, None
-
-                variations = resp.json()
-                if not variations:
-                    break
-
-                all_variations.extend(variations)
-
-                # Leer el total de variaciones del header
-                if total is None:
-                    total_str = resp.headers.get("X-WP-Total")
-                    total = int(total_str) if total_str and total_str.isdigit() else None
-
-                # Si ya tenemos todas las variaciones, salimos
-                if total is not None and len(all_variations) >= total:
-                    break
-
-                page += 1
-
-            return all_variations, 200, total
-
-        except requests.RequestException as e:
-            raise ConnectionError(f"Error de conexión: {str(e)}") from e
+        url = f"{self.api_base}/products/{product_id}/variations"
+        params = {"page": page, "per_page": per_page}
+        response = requests.get(url, params=params, timeout=10)
+        status_code = response.status_code
+        variations = response.json() if status_code == 200 else []
+        total = int(response.headers.get("X-WP-Total", len(variations)))
+        return variations, status_code, total

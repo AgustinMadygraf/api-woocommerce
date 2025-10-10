@@ -3,9 +3,9 @@ Path: src/infrastructure/cli/as400_woocommerce_cli.py
 """
 
 import os
+import msvcrt
 from colorama import init, Fore
-import keyboard  # Agrega esta importación
-import msvcrt  # Agrega esta importación arriba
+import keyboard
 
 from src.infrastructure.cli.as400_ui import AS400UI
 from src.infrastructure.cli.services.wc_api_client import WCApiClient
@@ -65,26 +65,55 @@ class AS400WooCommerceCLI:
         input(Fore.GREEN + "Presione ENTER para continuar...")
 
     def show_product_variations(self):
-        "Muestra variaciones de un producto variable"
+        "Muestra variaciones de un producto variable con paginación"
         self.clear_screen()
         self.flush_keyboard_events()
         self.flush_stdin()
         product_id = input(Fore.GREEN + "Ingrese el ID del producto variable: ").strip()
-        print(Fore.YELLOW + "Cargando variaciones... Por favor espere.")
-        # Bloquea teclado durante la carga
-        keyboard.block_key('enter')
-        keyboard.block_key('1')
-        keyboard.block_key('2')
-        keyboard.block_key('f1')
-        keyboard.block_key('f3')
-        self.last_message = self.product_variations_cmd.execute(product_id)
-        keyboard.unblock_key('enter')
-        keyboard.unblock_key('1')
-        keyboard.unblock_key('2')
-        keyboard.unblock_key('f1')
-        keyboard.unblock_key('f3')
-        self.flush_stdin()
-        input(Fore.GREEN + "Presione ENTER para continuar...")
+        per_page = 20  # Puedes ajustar este valor según tu preferencia
+        page = 1
+
+        while True:
+            self.clear_screen()
+            print(Fore.YELLOW + f"Cargando variaciones... Página {page} (F7=Anterior, F8=Siguiente, F3=Salir)")
+            keyboard.block_key('enter')
+            keyboard.block_key('f1')
+            keyboard.block_key('f3')
+            keyboard.block_key('f7')
+            keyboard.block_key('f8')
+            self.flush_keyboard_events()
+            self.flush_stdin()
+            result = self.product_variations_cmd.execute(product_id, page, per_page)
+            keyboard.unblock_key('enter')
+            keyboard.unblock_key('f1')
+            keyboard.unblock_key('f3')
+            keyboard.unblock_key('f7')
+            keyboard.unblock_key('f8')
+
+            # result debe ser una tupla: (mensaje, total_pages)
+            if isinstance(result, tuple):
+                _, total_pages = result
+            else:
+                _, total_pages = result, 1
+
+            print(Fore.GREEN + f"Página {page}/{total_pages}  [F7=Anterior] [F8=Siguiente] [F3=Salir]")
+            input_msg = Fore.GREEN + "Presione ENTER para continuar, F7/F8 para navegar, F3 para salir..."
+            print(input_msg)
+
+            # Espera tecla
+            while True:
+                event = keyboard.read_event()
+                if event.event_type == keyboard.KEY_DOWN:
+                    if event.name == 'f3':
+                        return
+                    elif event.name == 'f7' and page > 1:
+                        page -= 1
+                        break
+                    elif event.name == 'f8' and page < total_pages:
+                        page += 1
+                        break
+                    elif event.name == 'enter':
+                        return
 
     def clear_screen(self):
         "Limpia la pantalla para simular área de trabajo AS400"
