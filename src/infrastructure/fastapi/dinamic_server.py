@@ -19,29 +19,10 @@ logger = get_logger("woocommerce-adapter")
 
 logger.info("Inicializando el router de WooCommerce Adapter")
 
-
-def _build_wc_status_url(base_url: str) -> str:
-    "Construye la URL completa para el endpoint de estado del sistema WooCommerce"
-    base = (base_url or "").strip()
-    if not base:
-        raise ValueError("URL base vacía")
-
-    # Limpiar espacios y barras
-    base = base.strip().rstrip("/")
-
-    # Si el usuario metió 'wp-json' por error en la base, lo recortamos
-    for frag in ("/wp-json", "/wp-json/"):
-        if base.endswith(frag.rstrip("/")):
-            base = base[: -len(frag.rstrip("/"))]
-            base = base.rstrip("/")
-
-    return f"{base}/wp-json/wc/v3/system_status"
-
-
 @router.get("/api/wp-json/wc/v3/system_status")
 @router.post("/api/wp-json/wc/v3/system_status")
 def wc_system_status():
-    "Endpoint para obtener el estado del sistema WooCommerce usando la librería oficial"
+    "Endpoint para obtener el estado del sistema WooCommerce"
     try:
         cfg = get_config()
         base_url = cfg["URL"]
@@ -60,7 +41,7 @@ def wc_system_status():
 
 @router.get("/api/wp-json/wc/v3/products")
 def wc_variable_products(product_type: str = "variable"):
-    "Endpoint para obtener productos variables desde WooCommerce usando la arquitectura limpia"
+    "Endpoint para obtener productos variables desde WooCommerce"
     if product_type != "variable":
         raise HTTPException(status_code=400, detail="Solo se soporta type=variable en este endpoint")
     try:

@@ -41,10 +41,7 @@ def get_system_status(base_url: str, ck: str, cs: str) -> dict:
         raise WCServiceError(500, "Error inesperado", str(e)) from e
 
 def get_variable_products(base_url: str, ck: str, cs: str, params: dict = None) -> list:
-    """
-    Obtiene todos los productos variables desde WooCommerce.
-    Devuelve la respuesta tal como la entrega la API.
-    """
+    "Obtiene productos variables de WooCommerce usando la librería oficial"
     wcapi = get_wc_api(base_url, ck, cs)
     query_params = {"type": "variable"}
     if params:
