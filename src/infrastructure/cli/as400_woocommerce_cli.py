@@ -60,9 +60,9 @@ class AS400WooCommerceCLI:
                     "Variaciones": total_variaciones,
                 })
             # Imprimir tabla con formato alineado
-            print(Fore.GREEN + "=" * 78)
+            print(Fore.GREEN + "=" * 90)
             print(Fore.GREEN + "ID".ljust(8) + "Nombre".ljust(40) + "Estado".ljust(10) + "Tipo".ljust(10) + "Variaciones".ljust(10))
-            print(Fore.GREEN + "-" * 78)
+            print(Fore.GREEN + "-" * 90)
             for row in rows:
                 print(
                     str(row.get("ID", "")).ljust(8) +
@@ -71,7 +71,7 @@ class AS400WooCommerceCLI:
                     str(row.get("Tipo", "")).ljust(10) +
                     str(row.get("Variaciones", "")).ljust(10)
                 )
-            print(Fore.GREEN + "=" * 78)
+            print(Fore.GREEN + "=" * 90)
             self.last_message = f"Mostrando {len(products)} productos variables."
         except requests.RequestException as e:
             self.last_message = f"Error de conexión: {str(e)}"
@@ -125,25 +125,39 @@ class AS400WooCommerceCLI:
                 cantidad = ""
                 manijas = ""
                 impresion = ""
-                precio_final = var.get("price", "")
+                con_sin_manijas = ""
                 for attr in var.get("attributes", []):
                     if attr.get("name", "").lower() == "cantidad":
                         cantidad = attr.get("option", "")
-                    elif attr.get("name", "").lower() == "manijas":
-                        manijas = attr.get("option", "")
                     elif attr.get("name", "").lower() == "impresión":
                         impresion = attr.get("option", "")
+                    elif attr.get("name", "").lower() == "con o sin manijas":
+                        manijas = attr.get("option", "")
+                        if manijas.strip().lower() == "con manijas":
+                            con_sin_manijas = "Con manijas"
+                        elif manijas.strip().lower() == "sin manijas":
+                            con_sin_manijas = "Sin manijas"
+                        else:
+                            con_sin_manijas = manijas  # Por si hay otros valores
+                precio_final_raw = var.get("price")
+                try:
+                    precio_final = "{:,.2f}".format(float(precio_final_raw)) if precio_final_raw else ""
+                except (ValueError, TypeError):
+                    precio_final = precio_final_raw or ""
                 rows.append({
                     "ID": var.get("id"),
-                    "Precio": var.get("price"),
+                    "Precio": precio_final,
                     "Cantidad": cantidad,
                     "Estado": var.get("status"),
                     "Manijas": manijas,
                     "Impresion": impresion,
                     "Precio Final": precio_final,
+                    "Con/Sin Manijas": con_sin_manijas,
                 })
-            # Ordenar por cantidad (convertir a int si es posible, sino usar 0)
-            rows.sort(key=lambda x: int(x["Cantidad"]) if x["Cantidad"].isdigit() else 0)
+            # Ordenar por cantidad ascendente
+            rows.sort(key=lambda x: int(x["Cantidad"]) if str(x["Cantidad"]).isdigit() else 0)
+            # Luego ordenar por impresión descendente (mantiene el orden de cantidad dentro de cada impresión)
+            rows.sort(key=lambda x: str(x["Impresion"]).lower(), reverse=True)
             self.ui.print_variations_table(rows)
             self.last_message = f"Mostrando {len(rows)} variaciones."
         except requests.RequestException as e:
