@@ -87,10 +87,13 @@ class AS400WooCommerceCLI:
         product_id = input(Fore.GREEN + "Ingrese el ID del producto variable: ").strip()
         try:
             all_variations = []
+            per_page = 50  # Puedes ajustar este valor (máximo 100)
+            page = 1
+            total = None
 
             while True:
                 resp = requests.get(
-                    f"{self.api_base}/products/{product_id}/variations",
+                    f"{self.api_base}/products/{product_id}/variations?per_page={per_page}&page={page}",
                     timeout=20
                 )
 
@@ -101,17 +104,28 @@ class AS400WooCommerceCLI:
                     return
 
                 variations = resp.json()
-                if not variations:  # No more results
+                if not variations:
                     break
 
                 all_variations.extend(variations)
-                break  # Solo una petición, ya que no hay paginación en el backend
+
+                # Leer el total de variaciones del header
+                if total is None:
+                    total_str = resp.headers.get("X-WP-Total")
+                    total = int(total_str) if total_str and total_str.isdigit() else None
+
+                # Si ya tenemos todas las variaciones, salimos
+                if total is not None and len(all_variations) >= total:
+                    break
+
+                page += 1
 
             rows = []
             for var in all_variations:
                 cantidad = ""
                 manijas = ""
                 impresion = ""
+                precio_final = var.get("price", "")
                 for attr in var.get("attributes", []):
                     if attr.get("name", "").lower() == "cantidad":
                         cantidad = attr.get("option", "")
@@ -126,7 +140,10 @@ class AS400WooCommerceCLI:
                     "Estado": var.get("status"),
                     "Manijas": manijas,
                     "Impresion": impresion,
+                    "Precio Final": precio_final,
                 })
+            # Ordenar por cantidad (convertir a int si es posible, sino usar 0)
+            rows.sort(key=lambda x: int(x["Cantidad"]) if x["Cantidad"].isdigit() else 0)
             self.ui.print_variations_table(rows)
             self.last_message = f"Mostrando {len(rows)} variaciones."
         except requests.RequestException as e:

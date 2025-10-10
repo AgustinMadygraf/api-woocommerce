@@ -44,7 +44,15 @@ class AS400UI:
     def print_variations_table(self, rows):
         "Imprime una tabla de variaciones con estilo AS400"
         print(Fore.GREEN + "=" * 78)
-        print(Fore.GREEN + "ID".ljust(10) + "Cantidad".ljust(12) + "Estado".ljust(10) + "Manijas".ljust(15) + "Impresión".ljust(25))
+        print(
+            Fore.GREEN +
+            "ID".ljust(10) +
+            "Cantidad".ljust(12) +
+            "Estado".ljust(10) +
+            "Manijas".ljust(15) +
+            "Precio Final".ljust(15) + 
+            "Impresión".ljust(15)
+        )
         print(Fore.GREEN + "-" * 78)
         for row in rows:
             print(
@@ -52,7 +60,8 @@ class AS400UI:
                 str(row.get("Cantidad", "")).ljust(12) +
                 str(row.get("Estado", "")).ljust(10) +
                 str(row.get("Manijas", "")).ljust(15) +
-                str(row.get("Impresion", "")).ljust(25)
+                str(row.get("Precio Final", "")).ljust(15) +
+                str(row.get("Impresion", "")).ljust(15)
             )
             print(Fore.GREEN + "-" * 78)
         print(Fore.GREEN + "=" * 78)

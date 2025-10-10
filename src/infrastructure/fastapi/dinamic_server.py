@@ -20,7 +20,6 @@ logger = get_logger("woocommerce-adapter")
 logger.info("Inicializando el router de WooCommerce Adapter")
 
 @router.get("/api/wp-json/wc/v3/system_status")
-@router.post("/api/wp-json/wc/v3/system_status")
 def wc_system_status():
     "Endpoint para obtener el estado del sistema WooCommerce"
     try:
