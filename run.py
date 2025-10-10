@@ -15,5 +15,5 @@ if __name__ == "__main__":
         "src.infrastructure.fastapi.static_server:app",
         host="0.0.0.0",
         port=5000,
-        reload="true"
+        reload="false"
     )
