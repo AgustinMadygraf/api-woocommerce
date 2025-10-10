@@ -9,6 +9,7 @@ from src.shared.logger import get_logger
 
 from src.infrastructure.httpx.httpx_service import get_wc_system_status
 from src.use_cases.get_wc_system_status_use_case import GetWCSystemStatusUseCase
+from src.domain.entities.wc_system_status import WCSystemStatus
 
 router = APIRouter(prefix="", tags=["woocommerce"])
 logger = get_logger("woocommerce-adapter")
@@ -38,8 +39,14 @@ def _build_wc_status_url(base_url: str) -> str:
 
 
 class HttpxWCSystemStatusGateway:
+    "Implementación del gateway usando httpx"
     async def get_system_status(self, wc_url: str, ck: str, cs: str, auth: str = "basic"):
-        return await get_wc_system_status(wc_url, ck, cs, auth)
+        "Obtiene el estado del sistema WooCommerce usando httpx"
+        resp = await get_wc_system_status(wc_url, ck, cs, auth)
+        if resp.status_code >= 400:
+            return resp  # Se maneja en el endpoint
+        data = resp.json()
+        return WCSystemStatus.from_api_response(data)
 
 
 @router.get("/api/wp-json/wc/v3/system_status")
@@ -57,22 +64,25 @@ async def wc_system_status(
         wc_url = _build_wc_status_url(cfg["URL"])
         gateway = HttpxWCSystemStatusGateway()
         use_case = GetWCSystemStatusUseCase(gateway, wc_url, cfg["CK"], cfg["CS"])
-        resp = await use_case.execute(auth)
+        result = await use_case.execute(auth)
 
-        if resp.status_code >= 400:
-            logger.error("WooCommerce respondió error %s: %s", resp.status_code, resp.text[:400])
+        # Si es un httpx.Response, hubo error
+        from httpx import Response
+
+        if isinstance(result, Response) and result.status_code >= 400:
+            logger.error("WooCommerce respondió error %s: %s", result.status_code, result.text[:400])
             raise HTTPException(
-                status_code=resp.status_code,
+                status_code=result.status_code,
                 detail={
                     "message": "WooCommerce devolvió un error",
-                    "status_code": resp.status_code,
+                    "status_code": result.status_code,
                     "target": wc_url,
-                    "body": resp.text,
+                    "body": result.text,
                 },
             )
 
-        data = resp.json()
-        return data
+        # Si es entidad, devolver su raw_data
+        return result.raw_data
 
     except Exception as e:  # pylint: disable=broad-except
         logger.exception("Error inesperado en wc_system_status")

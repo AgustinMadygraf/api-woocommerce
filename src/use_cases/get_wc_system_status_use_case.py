@@ -3,6 +3,7 @@ Path: src/use_cases/get_wc_system_status_use_case.py
 """
 
 from typing import Protocol
+from src.domain.entities.wc_system_status import WCSystemStatus
 
 class WCSystemStatusGateway(Protocol):
     "Protocolo para el gateway que obtiene el estado del sistema WooCommerce"
@@ -18,6 +19,6 @@ class GetWCSystemStatusUseCase:
         self.ck = ck
         self.cs = cs
 
-    async def execute(self, auth: str = "basic"):
+    async def execute(self, auth: str = "basic") -> WCSystemStatus:
         "Ejecuta el caso de uso para obtener el estado del sistema WooCommerce"
         return await self.gateway.get_system_status(self.wc_url, self.ck, self.cs, auth)
