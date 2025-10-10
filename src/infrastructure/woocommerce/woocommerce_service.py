@@ -55,3 +55,16 @@ def get_variable_products(base_url: str, ck: str, cs: str, params: dict = None) 
     except Exception as e:
         logger.exception("Error inesperado en get_variable_products")
         raise WCServiceError(500, "Error inesperado", str(e)) from e
+
+def get_product_variations(base_url: str, ck: str, cs: str, product_id: int, params: dict = None) -> list:
+    "Obtiene variaciones de un producto variable desde WooCommerce usando la librería oficial"
+    wcapi = get_wc_api(base_url, ck, cs)
+    try:
+        resp = wcapi.get(f"products/{product_id}/variations", params=params)
+        if resp.status_code >= 400:
+            logger.error("WooCommerce respondió error %s: %s", resp.status_code, resp.text)
+            raise WCServiceError(resp.status_code, "WooCommerce devolvió un error", resp.text)
+        return resp.json()
+    except Exception as e:
+        logger.exception("Error inesperado en get_product_variations")
+        raise WCServiceError(500, "Error inesperado", str(e)) from e

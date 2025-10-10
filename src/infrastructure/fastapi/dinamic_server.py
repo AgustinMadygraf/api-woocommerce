@@ -8,11 +8,12 @@ from src.shared.config import get_config
 from src.shared.logger_fastapi import get_logger
 
 from src.infrastructure.woocommerce.woocommerce_service import (
-    get_system_status, WCServiceError, get_variable_products
+    get_system_status, WCServiceError, get_variable_products, get_product_variations
 )
 from src.interface_adapter.presenters.wc_system_status_presenter import WCSystemStatusPresenter
 from src.entities.wc_system_status import WCSystemStatus
 from src.use_cases.get_wc_variable_products import GetWCVariableProductsUseCase
+from src.use_cases.get_wc_product_variations import GetWCProductVariationsUseCase
 
 router = APIRouter(prefix="", tags=["woocommerce"])
 logger = get_logger("woocommerce-adapter")
@@ -60,4 +61,25 @@ def wc_variable_products(product_type: str = "variable"):
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except Exception as e:
         logger.exception("Error inesperado en wc_variable_products")
+        raise HTTPException(status_code=500, detail="Error inesperado") from e
+
+
+@router.get("/api/wp-json/wc/v3/products/{product_id}/variations")
+def wc_product_variations(product_id: int):
+    "Endpoint para obtener variaciones de un producto variable desde WooCommerce"
+    try:
+        cfg = get_config()
+        base_url = cfg["URL"]
+        ck = cfg["CK"]
+        cs = cfg["CS"]
+        use_case = GetWCProductVariationsUseCase(
+            lambda pid, *a, **kw: get_product_variations(base_url, ck, cs, pid, *a, **kw)
+        )
+        variations = use_case.execute(product_id)
+        return [var.to_dict() for var in variations]
+    except WCServiceError as e:
+        logger.error("WooCommerce respondió error %s: %s", e.status_code, str(e.body)[:400])
+        raise HTTPException(status_code=e.status_code, detail=e.message) from e
+    except Exception as e:
+        logger.exception("Error inesperado en wc_product_variations")
         raise HTTPException(status_code=500, detail="Error inesperado") from e
