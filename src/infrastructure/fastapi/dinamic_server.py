@@ -3,12 +3,11 @@ Path: src/infrastructure/fastapi/dinamic_server.py
 """
 
 from fastapi import APIRouter, HTTPException, Query
-from httpx import Response
 
 from src.shared.config import get_config
-from src.shared.logger import get_logger
+from src.shared.logger_fastapi import get_logger
 
-from src.infrastructure.httpx.httpx_service import get_wc_system_status
+from src.infrastructure.httpx.httpx_service import get_wc_system_status, WCSystemStatusGatewayError
 from src.interface_adapter.gateways.wc_system_status_httpx_gateway import WCSystemStatusHttpxGateway
 from src.interface_adapter.controllers.wc_system_status_controller import WCSystemStatusController
 from src.interface_adapter.presenters.wc_system_status_presenter import WCSystemStatusPresenter
@@ -59,7 +58,7 @@ async def wc_system_status(
         description="Método de auth a WooCommerce: 'basic' (user=CK, pass=CS) o 'query' (params).",
     )
 ):
-    " Consulta el estado del sistema WooCommerce y lo devuelve como JSON"
+    "Endpoint para obtener el estado del sistema WooCommerce"
     try:
         cfg = get_config()
         wc_url = _build_wc_status_url(cfg["URL"])
@@ -68,21 +67,20 @@ async def wc_system_status(
         controller = WCSystemStatusController(use_case)
         result = await controller.get_status(auth)
 
-        if isinstance(result, Response) and result.status_code >= 400:
-            logger.error("WooCommerce respondió error %s: %s", result.status_code, result.text[:400])
-            raise HTTPException(
-                status_code=result.status_code,
-                detail={
-                    "message": "WooCommerce devolvió un error",
-                    "status_code": result.status_code,
-                    "target": wc_url,
-                    "body": result.text,
-                },
-            )
-
         # Usar el presenter para la respuesta
         return WCSystemStatusPresenter.present(result)
 
+    except WCSystemStatusGatewayError as e:
+        logger.error("WooCommerce respondió error %s: %s", e.status_code, str(e.body)[:400])
+        raise HTTPException(
+            status_code=e.status_code,
+            detail={
+                "message": e.message,
+                "status_code": e.status_code,
+                "target": wc_url,
+                "body": e.body,
+            },
+        ) from e
     except Exception as e:  # pylint: disable=broad-except
         logger.exception("Error inesperado en wc_system_status")
         raise HTTPException(
