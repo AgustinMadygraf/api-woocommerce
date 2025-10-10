@@ -2,7 +2,7 @@
 Path: src/infrastructure/fastapi/dinamic_server.py
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 
 from src.shared.config import get_config
 from src.shared.logger_fastapi import get_logger
@@ -65,17 +65,24 @@ def wc_variable_products(product_type: str = "variable"):
 
 
 @router.get("/api/wp-json/wc/v3/products/{product_id}/variations")
-def wc_product_variations(product_id: int):
+def wc_product_variations(
+    product_id: int,
+    per_page: int = Query(10, ge=1, le=100),
+    page: int = Query(1, ge=1)
+):
     "Endpoint para obtener variaciones de un producto variable desde WooCommerce"
     try:
         cfg = get_config()
         base_url = cfg["URL"]
         ck = cfg["CK"]
         cs = cfg["CS"]
+        params = {"per_page": per_page, "page": page}
         use_case = GetWCProductVariationsUseCase(
-            lambda pid, *a, **kw: get_product_variations(base_url, ck, cs, pid, *a, **kw)
+            lambda pid, *a, **kw: get_product_variations(base_url, ck, cs, pid, params)
         )
+        logger.debug("Ejecutando caso de uso para obtener variaciones del producto ID %s", product_id)
         variations = use_case.execute(product_id)
+        logger.debug("Obtenidas %d variaciones para el producto ID %s", len(variations), product_id)
         return [var.to_dict() for var in variations]
     except WCServiceError as e:
         logger.error("WooCommerce respondió error %s: %s", e.status_code, str(e.body)[:400])

@@ -58,9 +58,11 @@ def get_variable_products(base_url: str, ck: str, cs: str, params: dict = None) 
 
 def get_product_variations(base_url: str, ck: str, cs: str, product_id: int, params: dict = None) -> list:
     "Obtiene variaciones de un producto variable desde WooCommerce usando la librería oficial"
+    logger.debug("Obteniendo variaciones para producto ID %s con params %s", product_id, params)
     wcapi = get_wc_api(base_url, ck, cs)
     try:
         resp = wcapi.get(f"products/{product_id}/variations", params=params)
+        logger.debug("Respuesta de WooCommerce: %s", resp.text)
         if resp.status_code >= 400:
             logger.error("WooCommerce respondió error %s: %s", resp.status_code, resp.text)
             raise WCServiceError(resp.status_code, "WooCommerce devolvió un error", resp.text)

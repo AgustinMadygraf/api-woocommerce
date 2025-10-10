@@ -34,7 +34,7 @@ class FastAPIStyleFormatter(logging.Formatter):
 def get_logger(name="api-woocommerce"):
     "Configura y devuelve un logger con formato estilo FastAPI/Uvicorn."
     config = get_config()
-    log_level = config.get("LOG_LEVEL", "INFO").upper()
+    log_level = config.get("LOG_LEVEL", "DEBUG").upper()
     logger = logging.getLogger(name)
 
     # Evitar agregar handlers duplicados
