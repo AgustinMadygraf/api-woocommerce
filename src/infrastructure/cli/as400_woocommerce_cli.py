@@ -22,10 +22,11 @@ class AS400WooCommerceCLI:
         self.ui.print_header("WOOCOMMERCE API - AS400 IBM STYLE")
         self.ui.print_menu()
         self.ui.print_message_area(self.last_message)
+        self.last_message = ""
         return input(Fore.GREEN + "Seleccione opción: ").strip()
 
     def show_variable_products(self):
-        "Muestra productos variables desde la API de WooCommerce"
+        "Muestra productos variables desde la API de WooCommerce, incluyendo cantidad de variaciones"
         self.clear_screen()
         self.ui.print_header("PRODUCTOS VARIABLES")
         try:
@@ -38,14 +39,38 @@ class AS400WooCommerceCLI:
             products = resp.json()
             rows = []
             for prod in products:
+                try:
+                    var_resp = requests.get(
+                        f"{self.api_base}/products/{prod.get('id')}/variations",
+                        timeout=10
+                    )
+                    if var_resp.status_code == 200:
+                        total_variaciones = len(var_resp.json())
+                    else:
+                        total_variaciones = "?"
+                except requests.RequestException:
+                    total_variaciones = "?"
                 rows.append({
                     "ID": prod.get("id"),
                     "Nombre": prod.get("name"),
                     "SKU": prod.get("sku"),
                     "Estado": prod.get("status"),
                     "Tipo": prod.get("type"),
+                    "Variaciones": total_variaciones,
                 })
-            self.ui.print_rows_area(rows)
+            # Imprimir tabla con formato alineado
+            print(Fore.GREEN + "=" * 78)
+            print(Fore.GREEN + "ID".ljust(8) + "Nombre".ljust(40) + "Estado".ljust(10) + "Tipo".ljust(10) + "Variaciones".ljust(10))
+            print(Fore.GREEN + "-" * 78)
+            for row in rows:
+                print(
+                    str(row.get("ID", "")).ljust(8) +
+                    str(row.get("Nombre", "")).ljust(40) +
+                    str(row.get("Estado", "")).ljust(10) +
+                    str(row.get("Tipo", "")).ljust(10) +
+                    str(row.get("Variaciones", "")).ljust(10)
+                )
+            print(Fore.GREEN + "=" * 78)
             self.last_message = f"Mostrando {len(products)} productos variables."
         except requests.RequestException as e:
             self.last_message = f"Error de conexión: {str(e)}"
@@ -55,29 +80,54 @@ class AS400WooCommerceCLI:
         input(Fore.GREEN + "Presione ENTER para continuar...")
 
     def show_product_variations(self):
-        "Muestra variaciones de un producto variable desde la API de WooCommerce"
+        "Muestra todas las variaciones de un producto variable desde la API de WooCommerce"
         self.clear_screen()
         self.ui.print_header("VARIACIONES DE PRODUCTO")
         product_id = input(Fore.GREEN + "Ingrese el ID del producto variable: ").strip()
         try:
-            resp = requests.get(f"{self.api_base}/products/{product_id}/variations", timeout=10)
-            if resp.status_code != 200:
-                self.last_message = f"Error: {resp.status_code} - {resp.text}"
-                self.ui.print_message_area(self.last_message)
-                input(Fore.GREEN + "Presione ENTER para continuar...")
-                return
-            variations = resp.json()
+            all_variations = []
+
+            while True:
+                resp = requests.get(
+                    f"{self.api_base}/products/{product_id}/variations",
+                    timeout=20
+                )
+
+                if resp.status_code != 200:
+                    self.last_message = f"Error: {resp.status_code} - {resp.text}"
+                    self.ui.print_message_area(self.last_message)
+                    input(Fore.GREEN + "Presione ENTER para continuar...")
+                    return
+
+                variations = resp.json()
+                if not variations:  # No more results
+                    break
+
+                all_variations.extend(variations)
+                break  # Solo una petición, ya que no hay paginación en el backend
+
             rows = []
-            for var in variations:
+            for var in all_variations:
+                cantidad = ""
+                manijas = ""
+                impresion = ""
+                for attr in var.get("attributes", []):
+                    if attr.get("name", "").lower() == "cantidad":
+                        cantidad = attr.get("option", "")
+                    elif attr.get("name", "").lower() == "manijas":
+                        manijas = attr.get("option", "")
+                    elif attr.get("name", "").lower() == "impresión":
+                        impresion = attr.get("option", "")
                 rows.append({
                     "ID": var.get("id"),
-                    "SKU": var.get("sku"),
                     "Precio": var.get("price"),
+                    "Cantidad": cantidad,
                     "Estado": var.get("status"),
-                    "Atributos": str(var.get("attributes")),
+                    "Manijas": manijas,
+                    "Impresion": impresion,
                 })
-            self.ui.print_rows_area(rows)
-            self.last_message = f"Mostrando {len(variations)} variaciones."
+            self.ui.print_variations_table(rows)
+            self.last_message = f"Mostrando {len(rows)} variaciones."
         except requests.RequestException as e:
             self.last_message = f"Error de conexión: {str(e)}"
         except ValueError as e:
