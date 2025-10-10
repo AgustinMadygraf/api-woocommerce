@@ -3,7 +3,7 @@ Path: src/use_cases/get_wc_system_status_use_case.py
 """
 
 from typing import Protocol
-from src.domain.entities.wc_system_status import WCSystemStatus
+from src.entities.wc_system_status import WCSystemStatus
 
 class WCSystemStatusGateway(Protocol):
     "Protocolo para el gateway que obtiene el estado del sistema WooCommerce"

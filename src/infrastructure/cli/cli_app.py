@@ -1,14 +1,19 @@
 """
 Path: src/infrastructure/cli/cli_app.py
-CLI application for interacting with WooCommerce API
 """
 
 import argparse
 import asyncio
 import sys
+from httpx import Response
+
 from src.shared.logger import get_logger
 from src.shared.config import get_config
+
+from src.interface_adapter.controllers.wc_system_status_controller import WCSystemStatusController
 from src.infrastructure.httpx.httpx_service import get_wc_system_status
+from src.interface_adapter.gateways.wc_system_status_httpx_gateway import WCSystemStatusHttpxGateway
+from src.use_cases.get_wc_system_status_use_case import GetWCSystemStatusUseCase
 
 logger = get_logger("woocommerce-cli")
 
@@ -36,20 +41,21 @@ async def system_status_command(auth="basic"):
     """Ejecuta el comando system_status en modo CLI"""
     cfg = get_config()
     wc_url = _build_wc_status_url(cfg["URL"])
+    gateway = WCSystemStatusHttpxGateway(get_wc_system_status)
+    use_case = GetWCSystemStatusUseCase(gateway, wc_url, cfg["CK"], cfg["CS"])
+    controller = WCSystemStatusController(use_case)
 
     logger.info("Consultando estado del sistema WooCommerce en %s", wc_url)
     try:
-        resp = await get_wc_system_status(wc_url, cfg["CK"], cfg["CS"], auth)
-
-        if resp.status_code >= 400:
-            logger.error("WooCommerce respondió error %s: %s", resp.status_code, resp.text[:400])
+        result = await controller.get_status(auth)
+        if isinstance(result, Response) and result.status_code >= 400:
+            logger.error("WooCommerce respondió error %s: %s", result.status_code, result.text[:400])
             sys.exit(1)
 
-        data = resp.json()
         logger.info("Estado del sistema recuperado correctamente")
-        print(f"Environment: {data.get('environment', {}).get('home_url', 'N/A')}")
-        print(f"WooCommerce version: {data.get('environment', {}).get('version', 'N/A')}")
-        return data
+        print(f"Environment: {result.home_url}")
+        print(f"WooCommerce version: {result.version}")
+        return result.raw_data
     except (KeyError, ValueError) as e:
         logger.error("Error de configuración o URL: %s", e)
         sys.exit(1)

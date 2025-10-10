@@ -3,13 +3,15 @@ Gateway de interface adapter para obtener el estado del sistema WooCommerce usan
 No depende directamente de infraestructura, solo recibe una función externa.
 """
 
-from src.domain.entities.wc_system_status import WCSystemStatus
+from src.entities.wc_system_status import WCSystemStatus
 
 class WCSystemStatusHttpxGateway:
+    "Implementación del gateway usando httpx"
     def __init__(self, httpx_get_status_func):
         self._get_status_func = httpx_get_status_func
 
     async def get_system_status(self, wc_url: str, ck: str, cs: str, auth: str = "basic"):
+        "Obtiene el estado del sistema WooCommerce usando httpx"
         resp = await self._get_status_func(wc_url, ck, cs, auth)
         if resp.status_code >= 400:
             return resp
