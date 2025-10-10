@@ -7,7 +7,9 @@ from fastapi import APIRouter, HTTPException
 from src.shared.config import get_config
 from src.shared.logger_fastapi import get_logger
 
-from src.infrastructure.woocommerce.woocommerce_service import get_system_status, WCServiceError
+from src.infrastructure.woocommerce.woocommerce_service import (
+    get_system_status, WCServiceError, get_variable_products
+)
 from src.interface_adapter.presenters.wc_system_status_presenter import WCSystemStatusPresenter
 from src.entities.wc_system_status import WCSystemStatus
 
@@ -52,4 +54,26 @@ def wc_system_status():
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
     except Exception as e:
         logger.exception("Error inesperado en wc_system_status")
+        raise HTTPException(status_code=500, detail="Error inesperado") from e
+
+
+@router.get("/api/wp-json/wc/v3/products")
+def wc_variable_products(product_type: str = "variable"):
+    """
+    Endpoint para obtener todos los productos variables de WooCommerce.
+    """
+    if product_type != "variable":
+        raise HTTPException(status_code=400, detail="Solo se soporta type=variable en este endpoint")
+    try:
+        cfg = get_config()
+        base_url = cfg["URL"]
+        ck = cfg["CK"]
+        cs = cfg["CS"]
+        products = get_variable_products(base_url, ck, cs)
+        return products
+    except WCServiceError as e:
+        logger.error("WooCommerce respondió error %s: %s", e.status_code, str(e.body)[:400])
+        raise HTTPException(status_code=e.status_code, detail=e.message) from e
+    except Exception as e:
+        logger.exception("Error inesperado en wc_variable_products")
         raise HTTPException(status_code=500, detail="Error inesperado") from e

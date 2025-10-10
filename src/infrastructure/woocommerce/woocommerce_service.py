@@ -39,3 +39,22 @@ def get_system_status(base_url: str, ck: str, cs: str) -> dict:
     except Exception as e:
         logger.exception("Error inesperado en get_system_status")
         raise WCServiceError(500, "Error inesperado", str(e)) from e
+
+def get_variable_products(base_url: str, ck: str, cs: str, params: dict = None) -> list:
+    """
+    Obtiene todos los productos variables desde WooCommerce.
+    Devuelve la respuesta tal como la entrega la API.
+    """
+    wcapi = get_wc_api(base_url, ck, cs)
+    query_params = {"type": "variable"}
+    if params:
+        query_params.update(params)
+    try:
+        resp = wcapi.get("products", params=query_params)
+        if resp.status_code >= 400:
+            logger.error("WooCommerce respondió error %s: %s", resp.status_code, resp.text)
+            raise WCServiceError(resp.status_code, "WooCommerce devolvió un error", resp.text)
+        return resp.json()
+    except Exception as e:
+        logger.exception("Error inesperado en get_variable_products")
+        raise WCServiceError(500, "Error inesperado", str(e)) from e
