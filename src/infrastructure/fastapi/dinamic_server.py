@@ -10,9 +10,10 @@ from src.shared.logger import get_logger
 
 from src.infrastructure.httpx.httpx_service import get_wc_system_status
 from src.interface_adapter.gateways.wc_system_status_httpx_gateway import WCSystemStatusHttpxGateway
+from src.interface_adapter.controllers.wc_system_status_controller import WCSystemStatusController
+from src.interface_adapter.presenters.wc_system_status_presenter import WCSystemStatusPresenter
 from src.use_cases.get_wc_system_status_use_case import GetWCSystemStatusUseCase
 from src.entities.wc_system_status import WCSystemStatus
-from src.interface_adapter.controllers.wc_system_status_controller import WCSystemStatusController
 
 router = APIRouter(prefix="", tags=["woocommerce"])
 logger = get_logger("woocommerce-adapter")
@@ -79,7 +80,8 @@ async def wc_system_status(
                 },
             )
 
-        return result.raw_data
+        # Usar el presenter para la respuesta
+        return WCSystemStatusPresenter.present(result)
 
     except Exception as e:  # pylint: disable=broad-except
         logger.exception("Error inesperado en wc_system_status")
