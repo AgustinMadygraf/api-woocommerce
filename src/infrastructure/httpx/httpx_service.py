@@ -8,10 +8,7 @@ from src.shared.logger import get_logger
 logger = get_logger("httpx-service")
 
 async def get_wc_system_status(wc_url: str, ck: str, cs: str, auth: str = "basic") -> httpx.Response:
-    """
-    Consulta el endpoint system_status de WooCommerce usando httpx.
-    Hace fallback automático de basic a querystring si corresponde.
-    """
+    "Obtiene el estado del sistema WooCommerce usando httpx"
     timeout = httpx.Timeout(connect=10.0, read=20.0, write=10.0, pool=5.0)
     async with httpx.AsyncClient(timeout=timeout, follow_redirects=True) as client:
         resp = None

@@ -7,6 +7,7 @@ from fastapi import APIRouter, HTTPException, Query
 from src.shared.config import get_config
 from src.shared.logger import get_logger
 
+from src.interface_adapter.gateways.wc_system_status_httpx_gateway import WCSystemStatusHttpxGateway
 from src.infrastructure.httpx.httpx_service import get_wc_system_status
 from src.use_cases.get_wc_system_status_use_case import GetWCSystemStatusUseCase
 from src.domain.entities.wc_system_status import WCSystemStatus
@@ -18,10 +19,7 @@ logger.info("Inicializando el router de WooCommerce Adapter")
 
 
 def _build_wc_status_url(base_url: str) -> str:
-    """
-    Normaliza la base (con/sin slash final) y construye el endpoint completo.
-    Evita duplicar 'wp-json' si el usuario pegó algo raro en URL.
-    """
+    "Construye la URL completa para el endpoint de estado del sistema WooCommerce"
     base = (base_url or "").strip()
     if not base:
         raise ValueError("URL base vacía")
@@ -62,13 +60,11 @@ async def wc_system_status(
     try:
         cfg = get_config()
         wc_url = _build_wc_status_url(cfg["URL"])
-        gateway = HttpxWCSystemStatusGateway()
+        gateway = WCSystemStatusHttpxGateway(get_wc_system_status)
         use_case = GetWCSystemStatusUseCase(gateway, wc_url, cfg["CK"], cfg["CS"])
         result = await use_case.execute(auth)
 
-        # Si es un httpx.Response, hubo error
         from httpx import Response
-
         if isinstance(result, Response) and result.status_code >= 400:
             logger.error("WooCommerce respondió error %s: %s", result.status_code, result.text[:400])
             raise HTTPException(
@@ -81,7 +77,6 @@ async def wc_system_status(
                 },
             )
 
-        # Si es entidad, devolver su raw_data
         return result.raw_data
 
     except Exception as e:  # pylint: disable=broad-except
