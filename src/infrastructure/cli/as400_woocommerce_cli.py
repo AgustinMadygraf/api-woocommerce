@@ -5,6 +5,7 @@ Path: src/infrastructure/cli/as400_woocommerce_cli.py
 import os
 import requests
 from colorama import init, Fore
+
 from src.infrastructure.cli.as400_ui import AS400UI
 
 init(autoreset=True)
