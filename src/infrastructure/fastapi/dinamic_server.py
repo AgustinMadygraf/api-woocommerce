@@ -12,6 +12,7 @@ from src.infrastructure.woocommerce.woocommerce_service import (
 )
 from src.interface_adapter.presenters.wc_system_status_presenter import WCSystemStatusPresenter
 from src.entities.wc_system_status import WCSystemStatus
+from src.use_cases.get_wc_variable_products import GetWCVariableProductsUseCase
 
 router = APIRouter(prefix="", tags=["woocommerce"])
 logger = get_logger("woocommerce-adapter")
@@ -59,9 +60,7 @@ def wc_system_status():
 
 @router.get("/api/wp-json/wc/v3/products")
 def wc_variable_products(product_type: str = "variable"):
-    """
-    Endpoint para obtener todos los productos variables de WooCommerce.
-    """
+    "Endpoint para obtener productos variables desde WooCommerce usando la arquitectura limpia"
     if product_type != "variable":
         raise HTTPException(status_code=400, detail="Solo se soporta type=variable en este endpoint")
     try:
@@ -69,8 +68,12 @@ def wc_variable_products(product_type: str = "variable"):
         base_url = cfg["URL"]
         ck = cfg["CK"]
         cs = cfg["CS"]
-        products = get_variable_products(base_url, ck, cs)
-        return products
+        # Inyección de dependencia: pasamos la función de infraestructura al caso de uso
+        use_case = GetWCVariableProductsUseCase(
+            lambda *a, **kw: get_variable_products(base_url, ck, cs, *a, **kw)
+        )
+        products = use_case.execute()
+        return [prod.to_dict() for prod in products]
     except WCServiceError as e:
         logger.error("WooCommerce respondió error %s: %s", e.status_code, str(e.body)[:400])
         raise HTTPException(status_code=e.status_code, detail=e.message) from e
