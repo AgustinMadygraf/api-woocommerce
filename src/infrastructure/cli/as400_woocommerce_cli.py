@@ -54,22 +54,28 @@ class AS400WooCommerceCLI:
                 rows.append({
                     "ID": prod.get("id"),
                     "Nombre": prod.get("name"),
-                    "SKU": prod.get("sku"),
                     "Estado": prod.get("status"),
                     "Tipo": prod.get("type"),
                     "Variaciones": total_variaciones,
+                    "Stock": prod.get("stock_quantity") if prod.get("stock_quantity") is not None else "Por variación",
                 })
             # Imprimir tabla con formato alineado
             print(Fore.GREEN + "=" * 90)
-            print(Fore.GREEN + "ID".ljust(8) + "Nombre".ljust(40) + "Estado".ljust(10) + "Tipo".ljust(10) + "Variaciones".ljust(10))
+            print(Fore.GREEN + "ID".ljust(7) + 
+                  "Estado".ljust(10) + 
+                  "Tipo".ljust(10) + 
+                  "Variaciones".ljust(12) + 
+                  "Stock".ljust(10) + 
+                  "Nombre".ljust(40))
             print(Fore.GREEN + "-" * 90)
             for row in rows:
                 print(
-                    str(row.get("ID", "")).ljust(8) +
-                    str(row.get("Nombre", "")).ljust(40) +
+                    str(row.get("ID", "")).ljust(7) +
                     str(row.get("Estado", "")).ljust(10) +
                     str(row.get("Tipo", "")).ljust(10) +
-                    str(row.get("Variaciones", "")).ljust(10)
+                    str(row.get("Variaciones", "")).ljust(12) +
+                    str(row.get("Stock", "")).ljust(10) +
+                    str(row.get("Nombre", "")).ljust(40)
                 )
             print(Fore.GREEN + "=" * 90)
             self.last_message = f"Mostrando {len(products)} productos variables."

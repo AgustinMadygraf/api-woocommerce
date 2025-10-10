@@ -50,7 +50,7 @@ class AS400UI:
             "Cantidad".ljust(10) +
             "Estado".ljust(10) +
             "Manijas".ljust(15) +
-            "Precio Final".ljust(15) +
+            "Precio Final".rjust(13) + "   " +  # <-- Espacios para separar
             "Impresión".ljust(18)
         )
         print(Fore.GREEN + "-" * 90)
@@ -60,8 +60,33 @@ class AS400UI:
                 str(row.get("Cantidad", "")).ljust(10) +
                 str(row.get("Estado", "")).ljust(10) +
                 str(row.get("Manijas", "")).ljust(15) +
-                str(row.get("Precio Final", "")).ljust(15) +
+                str(row.get("Precio Final", "")).rjust(13) + "   " +
                 str(row.get("Impresion", "")).ljust(18)
+            )
+            print(Fore.GREEN + "-" * 90)
+        print(Fore.GREEN + "=" * 90)
+
+    def print_variable_products_table(self, rows):
+        "Imprime una tabla de productos variables con el orden solicitado"
+        print(Fore.GREEN + "=" * 90)
+        print(
+            Fore.GREEN +
+            "ID".ljust(6) +
+            "Nombre".ljust(30) +
+            "Estado".ljust(10) +
+            "Tipo".ljust(10) +
+            "Variaciones".ljust(12) +
+            "Stock".ljust(10)
+        )
+        print(Fore.GREEN + "-" * 90)
+        for row in rows:
+            print(
+                str(row.get("ID", "")).ljust(6) +
+                str(row.get("Nombre", "")).ljust(30) +
+                str(row.get("Estado", "")).ljust(10) +
+                str(row.get("Tipo", "")).ljust(10) +
+                str(row.get("Variaciones", "")).ljust(12) +
+                str(row.get("Stock", "")).ljust(10)
             )
             print(Fore.GREEN + "-" * 90)
         print(Fore.GREEN + "=" * 90)
