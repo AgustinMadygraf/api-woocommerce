@@ -4,10 +4,11 @@ Path: src/infrastructure/fastapi/dinamic_server.py
 
 from fastapi import APIRouter, HTTPException, Query
 
-from src.shared.config import require_config
+from src.shared.config import get_config
 from src.shared.logger import get_logger
 
 from src.infrastructure.httpx.httpx_service import get_wc_system_status
+from src.use_cases.get_wc_system_status_use_case import GetWCSystemStatusUseCase
 
 router = APIRouter(prefix="", tags=["woocommerce"])
 logger = get_logger("woocommerce-adapter")
@@ -36,6 +37,11 @@ def _build_wc_status_url(base_url: str) -> str:
     return f"{base}/wp-json/wc/v3/system_status"
 
 
+class HttpxWCSystemStatusGateway:
+    async def get_system_status(self, wc_url: str, ck: str, cs: str, auth: str = "basic"):
+        return await get_wc_system_status(wc_url, ck, cs, auth)
+
+
 @router.get("/api/wp-json/wc/v3/system_status")
 @router.post("/api/wp-json/wc/v3/system_status")
 async def wc_system_status(
@@ -47,10 +53,11 @@ async def wc_system_status(
 ):
     " Consulta el estado del sistema WooCommerce y lo devuelve como JSON"
     try:
-        cfg = require_config(["URL", "CK", "CS"])
+        cfg = get_config()
         wc_url = _build_wc_status_url(cfg["URL"])
-
-        resp = await get_wc_system_status(wc_url, cfg["CK"], cfg["CS"], auth)
+        gateway = HttpxWCSystemStatusGateway()
+        use_case = GetWCSystemStatusUseCase(gateway, wc_url, cfg["CK"], cfg["CS"])
+        resp = await use_case.execute(auth)
 
         if resp.status_code >= 400:
             logger.error("WooCommerce respondió error %s: %s", resp.status_code, resp.text[:400])
