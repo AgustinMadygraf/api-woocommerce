@@ -3,10 +3,11 @@ Path: src/infrastructure/cli/as400_woocommerce_cli.py
 """
 
 import os
-import requests
 from colorama import init, Fore
 
 from src.infrastructure.cli.as400_ui import AS400UI
+from src.infrastructure.cli.services.wc_api_client import WCApiClient
+from src.infrastructure.cli.commands.wc_commands import VariableProductsCommand, ProductVariationsCommand
 
 init(autoreset=True)
 
@@ -16,6 +17,11 @@ class AS400WooCommerceCLI:
         self.api_base = api_base
         self.last_message = ""
         self.ui = AS400UI()
+        self.api_client = WCApiClient(api_base)
+
+        # Inicializar comandos
+        self.variable_products_cmd = VariableProductsCommand(self.api_client, self.ui)
+        self.product_variations_cmd = ProductVariationsCommand(self.api_client, self.ui)
 
     def main_menu(self):
         "Muestra el menú principal y captura la opción del usuario"
@@ -27,150 +33,16 @@ class AS400WooCommerceCLI:
         return input(Fore.GREEN + "Seleccione opción: ").strip()
 
     def show_variable_products(self):
-        "Muestra productos variables desde la API de WooCommerce, incluyendo cantidad de variaciones"
+        "Muestra productos variables desde la API de WooCommerce"
         self.clear_screen()
-        self.ui.print_header("PRODUCTOS VARIABLES")
-        try:
-            resp = requests.get(f"{self.api_base}/products?product_type=variable", timeout=10)
-            if resp.status_code != 200:
-                self.last_message = f"Error: {resp.status_code} - {resp.text}"
-                self.ui.print_message_area(self.last_message)
-                input(Fore.GREEN + "Presione ENTER para continuar...")
-                return
-            products = resp.json()
-            rows = []
-            for prod in products:
-                try:
-                    var_resp = requests.get(
-                        f"{self.api_base}/products/{prod.get('id')}/variations?per_page=1",
-                        timeout=10
-                    )
-                    if var_resp.status_code == 200:
-                        total_variaciones = var_resp.headers.get("X-WP-Total", "?")
-                    else:
-                        total_variaciones = "?"
-                except requests.RequestException:
-                    total_variaciones = "?"
-                rows.append({
-                    "ID": prod.get("id"),
-                    "Nombre": prod.get("name"),
-                    "Estado": prod.get("status"),
-                    "Tipo": prod.get("type"),
-                    "Variaciones": total_variaciones,
-                    "Stock": prod.get("stock_quantity") if prod.get("stock_quantity") is not None else "Por variación",
-                })
-            # Imprimir tabla con formato alineado
-            print(Fore.GREEN + "=" * 90)
-            print(Fore.GREEN + "ID".ljust(7) + 
-                  "Estado".ljust(10) + 
-                  "Tipo".ljust(10) + 
-                  "Variaciones".ljust(12) + 
-                  "Stock".ljust(10) + 
-                  "Nombre".ljust(40))
-            print(Fore.GREEN + "-" * 90)
-            for row in rows:
-                print(
-                    str(row.get("ID", "")).ljust(7) +
-                    str(row.get("Estado", "")).ljust(10) +
-                    str(row.get("Tipo", "")).ljust(10) +
-                    str(row.get("Variaciones", "")).ljust(12) +
-                    str(row.get("Stock", "")).ljust(10) +
-                    str(row.get("Nombre", "")).ljust(40)
-                )
-            print(Fore.GREEN + "=" * 90)
-            self.last_message = f"Mostrando {len(products)} productos variables."
-        except requests.RequestException as e:
-            self.last_message = f"Error de conexión: {str(e)}"
-        except ValueError as e:
-            self.last_message = f"Error al procesar datos: {str(e)}"
-        self.ui.print_message_area(self.last_message)
+        self.last_message = self.variable_products_cmd.execute()
         input(Fore.GREEN + "Presione ENTER para continuar...")
 
     def show_product_variations(self):
-        "Muestra todas las variaciones de un producto variable desde la API de WooCommerce"
+        "Muestra variaciones de un producto variable"
         self.clear_screen()
-        self.ui.print_header("VARIACIONES DE PRODUCTO")
         product_id = input(Fore.GREEN + "Ingrese el ID del producto variable: ").strip()
-        try:
-            all_variations = []
-            per_page = 50  # Puedes ajustar este valor (máximo 100)
-            page = 1
-            total = None
-
-            while True:
-                resp = requests.get(
-                    f"{self.api_base}/products/{product_id}/variations?per_page={per_page}&page={page}",
-                    timeout=20
-                )
-
-                if resp.status_code != 200:
-                    self.last_message = f"Error: {resp.status_code} - {resp.text}"
-                    self.ui.print_message_area(self.last_message)
-                    input(Fore.GREEN + "Presione ENTER para continuar...")
-                    return
-
-                variations = resp.json()
-                if not variations:
-                    break
-
-                all_variations.extend(variations)
-
-                # Leer el total de variaciones del header
-                if total is None:
-                    total_str = resp.headers.get("X-WP-Total")
-                    total = int(total_str) if total_str and total_str.isdigit() else None
-
-                # Si ya tenemos todas las variaciones, salimos
-                if total is not None and len(all_variations) >= total:
-                    break
-
-                page += 1
-
-            rows = []
-            for var in all_variations:
-                cantidad = ""
-                manijas = ""
-                impresion = ""
-                con_sin_manijas = ""
-                for attr in var.get("attributes", []):
-                    if attr.get("name", "").lower() == "cantidad":
-                        cantidad = attr.get("option", "")
-                    elif attr.get("name", "").lower() == "impresión":
-                        impresion = attr.get("option", "")
-                    elif attr.get("name", "").lower() == "con o sin manijas":
-                        manijas = attr.get("option", "")
-                        if manijas.strip().lower() == "con manijas":
-                            con_sin_manijas = "Con manijas"
-                        elif manijas.strip().lower() == "sin manijas":
-                            con_sin_manijas = "Sin manijas"
-                        else:
-                            con_sin_manijas = manijas  # Por si hay otros valores
-                precio_final_raw = var.get("price")
-                try:
-                    precio_final = "{:,.2f}".format(float(precio_final_raw)) if precio_final_raw else ""
-                except (ValueError, TypeError):
-                    precio_final = precio_final_raw or ""
-                rows.append({
-                    "ID": var.get("id"),
-                    "Precio": precio_final,
-                    "Cantidad": cantidad,
-                    "Estado": var.get("status"),
-                    "Manijas": manijas,
-                    "Impresion": impresion,
-                    "Precio Final": precio_final,
-                    "Con/Sin Manijas": con_sin_manijas,
-                })
-            # Ordenar por cantidad ascendente
-            rows.sort(key=lambda x: int(x["Cantidad"]) if str(x["Cantidad"]).isdigit() else 0)
-            # Luego ordenar por impresión descendente (mantiene el orden de cantidad dentro de cada impresión)
-            rows.sort(key=lambda x: str(x["Impresion"]).lower(), reverse=True)
-            self.ui.print_variations_table(rows)
-            self.last_message = f"Mostrando {len(rows)} variaciones."
-        except requests.RequestException as e:
-            self.last_message = f"Error de conexión: {str(e)}"
-        except ValueError as e:
-            self.last_message = f"Error al procesar datos: {str(e)}"
-        self.ui.print_message_area(self.last_message)
+        self.last_message = self.product_variations_cmd.execute(product_id)
         input(Fore.GREEN + "Presione ENTER para continuar...")
 
     def clear_screen(self):

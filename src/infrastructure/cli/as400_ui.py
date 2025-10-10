@@ -72,7 +72,7 @@ class AS400UI:
         print(
             Fore.GREEN +
             "ID".ljust(6) +
-            "Nombre".ljust(30) +
+            "Nombre".ljust(37) +  # <-- Cambiado de 30 a 37
             "Estado".ljust(10) +
             "Tipo".ljust(10) +
             "Variaciones".ljust(12) +
@@ -82,7 +82,7 @@ class AS400UI:
         for row in rows:
             print(
                 str(row.get("ID", "")).ljust(6) +
-                str(row.get("Nombre", "")).ljust(30) +
+                str(row.get("Nombre", "")).ljust(37) +  # <-- Cambiado de 30 a 37
                 str(row.get("Estado", "")).ljust(10) +
                 str(row.get("Tipo", "")).ljust(10) +
                 str(row.get("Variaciones", "")).ljust(12) +
