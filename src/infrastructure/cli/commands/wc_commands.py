@@ -19,30 +19,28 @@ class VariableProductsCommand:
         "Ejecuta el comando y retorna un mensaje de resultado"
         self.ui.print_header("PRODUCTOS VARIABLES")
         try:
-            # Caso de uso: obtener productos variables
             use_case = GetWCVariableProductsUseCase(lambda: [prod for prod, _ in [self.api_client.get_variable_products()]][0])
             products = use_case.execute()
-
-            # Obtener conteo de variaciones para cada producto
             variation_counts = {}
             for prod in products:
                 variation_counts[prod.id] = self.api_client.get_product_variation_count(prod.id)
-
-            # Presentador: transformar productos en filas para la UI
             rows = WCVariableProductsPresenter.present(products, variation_counts)
-
-            # Mostrar tabla
             self.ui.print_variable_products_table(rows)
-
             return f"Mostrando {len(products)} productos variables."
-        except ConnectionError as e:
+        except (ConnectionError, ValueError, KeyError, TypeError) as e:
+            return self._handle_error(e)
+
+    def _handle_error(self, e):
+        if isinstance(e, ConnectionError):
             return str(e)
-        except ValueError as e:
+        elif isinstance(e, ValueError):
             return f"Error de valor: {str(e)}"
-        except KeyError as e:
+        elif isinstance(e, KeyError):
             return f"Error de clave: {str(e)}"
-        except TypeError as e:
+        elif isinstance(e, TypeError):
             return f"Error de tipo: {str(e)}"
+        else:
+            return f"Error inesperado: {str(e)}"
 
 class ProductVariationsCommand:
     "Comando para mostrar variaciones de un producto"
@@ -53,24 +51,26 @@ class ProductVariationsCommand:
     def execute(self, product_id: str, page: int = 1, per_page: int = 20) -> tuple:
         "Ejecuta el comando y retorna un mensaje de resultado y total de páginas"
         self.ui.print_header("VARIACIONES DE PRODUCTO")
-
         try:
             variations, status_code, total = self.api_client.get_product_variations(product_id, page=page, per_page=per_page)
-
             if status_code != 200:
                 return f"Error: {status_code} - No se pudieron obtener las variaciones", 1
-
             rows = WCProductVariationsPresenter.present(variations) if status_code == 200 else []
             if rows:
                 self.ui.print_variations_table(rows)
             total_pages = (total // per_page) + (1 if total % per_page else 0)
             return f"Mostrando {len(variations)} variaciones.", total_pages
+        except (ConnectionError, ValueError, KeyError, TypeError) as e:
+            return self._handle_error(e), 1
 
-        except ConnectionError as e:
-            return str(e), 1
-        except ValueError as e:
-            return f"Error de valor: {str(e)}", 1
-        except KeyError as e:
-            return f"Error de clave: {str(e)}", 1
-        except TypeError as e:
-            return f"Error de tipo: {str(e)}", 1
+    def _handle_error(self, e):
+        if isinstance(e, ConnectionError):
+            return str(e)
+        elif isinstance(e, ValueError):
+            return f"Error de valor: {str(e)}"
+        elif isinstance(e, KeyError):
+            return f"Error de clave: {str(e)}"
+        elif isinstance(e, TypeError):
+            return f"Error de tipo: {str(e)}"
+        else:
+            return f"Error inesperado: {str(e)}"

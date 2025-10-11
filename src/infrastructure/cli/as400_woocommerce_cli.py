@@ -8,9 +8,10 @@ from colorama import init, Fore
 import keyboard
 
 from src.infrastructure.cli.as400_ui import AS400UI
-from src.infrastructure.cli.commands.wc_commands import VariableProductsCommand, ProductVariationsCommand
 from src.infrastructure.cli.services.wc_api_client import WCApiClient
 from src.interface_adapter.gateways.wc_gateway import WCGateway
+from src.interface_adapter.controllers.cli_controller import CLIController
+
 
 init(autoreset=True)
 
@@ -20,11 +21,8 @@ class AS400WooCommerceCLI:
         self.api_base = api_base
         self.last_message = ""
         self.ui = AS400UI()
-        self.api_client: WCGateway = WCApiClient(api_base)  # WCApiClient implementa WCGateway
-
-        # Inicializar comandos
-        self.variable_products_cmd = VariableProductsCommand(self.api_client, self.ui)
-        self.product_variations_cmd = ProductVariationsCommand(self.api_client, self.ui)
+        self.api_client: WCGateway = WCApiClient(api_base)
+        self.controller = CLIController(self.api_client, self.ui)
 
     def main_menu(self):
         "Muestra el menú principal y captura la opción del usuario o teclas F1/F3"
@@ -49,7 +47,6 @@ class AS400WooCommerceCLI:
         "Muestra productos variables desde la API de WooCommerce"
         self.clear_screen()
         print(Fore.YELLOW + "Cargando productos variables... Por favor espere.")
-        # Bloquea teclado durante la carga
         keyboard.block_key('enter')
         keyboard.block_key('1')
         keyboard.block_key('2')
@@ -57,7 +54,7 @@ class AS400WooCommerceCLI:
         keyboard.block_key('f3')
         self.flush_keyboard_events()
         self.flush_stdin()
-        self.last_message = self.variable_products_cmd.execute()
+        self.last_message = self.controller.show_variable_products()
         keyboard.unblock_key('enter')
         keyboard.unblock_key('1')
         keyboard.unblock_key('2')
@@ -71,9 +68,8 @@ class AS400WooCommerceCLI:
         self.flush_keyboard_events()
         self.flush_stdin()
         product_id = input(Fore.GREEN + "Ingrese el ID del producto variable: ").strip()
-        per_page = 20  # Puedes ajustar este valor según tu preferencia
+        per_page = 20
         page = 1
-
         while True:
             self.clear_screen()
             print(Fore.YELLOW + f"Cargando variaciones... Página {page} (F7=Anterior, F8=Siguiente, F3=Salir)")
@@ -84,24 +80,19 @@ class AS400WooCommerceCLI:
             keyboard.block_key('f8')
             self.flush_keyboard_events()
             self.flush_stdin()
-            result = self.product_variations_cmd.execute(product_id, page, per_page)
+            result = self.controller.show_product_variations(product_id, page, per_page)
             keyboard.unblock_key('enter')
             keyboard.unblock_key('f1')
             keyboard.unblock_key('f3')
             keyboard.unblock_key('f7')
             keyboard.unblock_key('f8')
-
-            # result debe ser una tupla: (mensaje, total_pages)
             if isinstance(result, tuple):
                 _, total_pages = result
             else:
                 _, total_pages = result, 1
-
             print(Fore.GREEN + f"Página {page}/{total_pages}  [F7=Anterior] [F8=Siguiente] [F3=Salir]")
             input_msg = Fore.GREEN + "Presione ENTER para continuar, F7/F8 para navegar, F3 para salir..."
             print(input_msg)
-
-            # Espera tecla
             while True:
                 event = keyboard.read_event()
                 if event.event_type == keyboard.KEY_DOWN:
@@ -126,7 +117,6 @@ class AS400WooCommerceCLI:
             while keyboard.peek():
                 keyboard.read_event(suppress=True)
         except AttributeError:
-            # Si peek no existe, simplemente pasa
             pass
         keyboard.clear_all_hotkeys()
 
