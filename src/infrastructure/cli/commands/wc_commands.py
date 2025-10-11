@@ -2,19 +2,19 @@
 Path: src/infrastructure/cli/commands/wc_commands.py
 """
 
-from src.infrastructure.cli.services.wc_api_client import WCApiClient
+from src.interface_adapter.gateways.wc_gateway import WCGateway
 from src.infrastructure.cli.processors.wc_data_processor import WCDataProcessor
 from src.infrastructure.cli.as400_ui import AS400UI
 
 class VariableProductsCommand:
-    """Comando para mostrar productos variables"""
+    "Comando para mostrar productos variables"
 
-    def __init__(self, api_client: WCApiClient, ui: AS400UI):
+    def __init__(self, api_client: WCGateway, ui: AS400UI):
         self.api_client = api_client
         self.ui = ui
 
     def execute(self) -> str:
-        """Ejecuta el comando y retorna un mensaje de resultado"""
+        "Ejecuta el comando y retorna un mensaje de resultado"
         self.ui.print_header("PRODUCTOS VARIABLES")
 
         try:
@@ -49,12 +49,12 @@ class VariableProductsCommand:
 
 class ProductVariationsCommand:
     "Comando para mostrar variaciones de un producto"
-    def __init__(self, api_client: WCApiClient, ui: AS400UI):
+    def __init__(self, api_client: WCGateway, ui: AS400UI):
         self.api_client = api_client
         self.ui = ui
 
     def execute(self, product_id: str, page: int = 1, per_page: int = 20) -> tuple:
-        """Ejecuta el comando y retorna un mensaje de resultado y total de páginas"""
+        "Ejecuta el comando y retorna un mensaje de resultado y total de páginas"
         self.ui.print_header("VARIACIONES DE PRODUCTO")
 
         try:

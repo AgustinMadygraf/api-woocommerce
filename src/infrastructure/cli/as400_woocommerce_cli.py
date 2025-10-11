@@ -8,8 +8,9 @@ from colorama import init, Fore
 import keyboard
 
 from src.infrastructure.cli.as400_ui import AS400UI
-from src.infrastructure.cli.services.wc_api_client import WCApiClient
 from src.infrastructure.cli.commands.wc_commands import VariableProductsCommand, ProductVariationsCommand
+from src.infrastructure.cli.services.wc_api_client import WCApiClient
+from src.interface_adapter.gateways.wc_gateway import WCGateway
 
 init(autoreset=True)
 
@@ -19,7 +20,7 @@ class AS400WooCommerceCLI:
         self.api_base = api_base
         self.last_message = ""
         self.ui = AS400UI()
-        self.api_client = WCApiClient(api_base)
+        self.api_client: WCGateway = WCApiClient(api_base)  # WCApiClient implementa WCGateway
 
         # Inicializar comandos
         self.variable_products_cmd = VariableProductsCommand(self.api_client, self.ui)
