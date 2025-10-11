@@ -1,29 +1,14 @@
 """
-Path: src/infrastructure/cli/processors/wc_data_processor.py
+Presentador para variaciones de productos de WooCommerce
+Transforma variaciones en datos listos para la UI
 """
-from typing import Dict, List
 
-class WCDataProcessor:
-    "Procesa datos recibidos de WooCommerce para su presentación"
-    @staticmethod
-    def process_variable_products(products: List[Dict], variation_counts: Dict[int, str]) -> List[Dict]:
-        "Procesa productos variables para su presentación"
-        rows = []
-        for prod in products:
-            prod_id = prod.get("id")
-            rows.append({
-                "ID": prod_id,
-                "Nombre": prod.get("name"),
-                "Estado": prod.get("status"),
-                "Tipo": prod.get("type"),
-                "Variaciones": variation_counts.get(prod_id, "?"),
-                "Stock": prod.get("stock_quantity") if prod.get("stock_quantity") is not None else "Por variación",
-            })
-        return rows
+from typing import List, Dict
 
+class WCProductVariationsPresenter:
     @staticmethod
-    def process_product_variations(variations: List[Dict]) -> List[Dict]:
-        "Procesa variaciones de producto para su presentación"
+    def present(variations: List[Dict]) -> List[Dict]:
+        """Procesa variaciones de producto para su presentación en la UI"""
         rows = []
         for var in variations:
             cantidad = ""
