@@ -6,6 +6,7 @@ Transforma variaciones en datos listos para la UI
 from typing import List, Dict
 
 class WCProductVariationsPresenter:
+    "Presentador para variaciones de productos"
     @staticmethod
     def present(variations: List[Dict]) -> List[Dict]:
         """Procesa variaciones de producto para su presentación en la UI"""

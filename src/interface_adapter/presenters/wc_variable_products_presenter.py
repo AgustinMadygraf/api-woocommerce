@@ -1,12 +1,12 @@
 """
-Presentador para productos variables de WooCommerce
-Transforma entidades WCVariableProduct en datos listos para la UI
+Path: src/interface_adapter/presenters/wc_variable_products_presenter.py
 """
 
 from typing import List, Dict
 from src.entities.wc_variable_product import WCVariableProduct
 
 class WCVariableProductsPresenter:
+    "Presentador para productos variables"
     @staticmethod
     def present(products: List[WCVariableProduct], variation_counts: Dict[int, str]) -> List[Dict]:
         """Procesa productos variables para su presentación en la UI"""
