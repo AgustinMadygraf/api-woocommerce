@@ -2,7 +2,9 @@
 Path: src/infrastructure/cli/as400_ui.py
 """
 
+
 from colorama import Fore
+from src.infrastructure.cli.formatters.as400_formatter import AS400Formatter
 
 class AS400UI:
     "Funciones de presentación con estilo AS400 IBM."
@@ -10,21 +12,12 @@ class AS400UI:
     MAX_ROWS = 24
 
     def print_header(self, title):
-        "Imprime el encabezado con estilo AS400"
-        print(Fore.GREEN + "=" * self.MAX_COLS)
-        print(Fore.GREEN + f"{title[:self.MAX_COLS].center(self.MAX_COLS)}")
-        print(Fore.GREEN + "=" * self.MAX_COLS)
+        "Imprime el encabezado con estilo AS400 usando el formatter"
+        print(AS400Formatter.format_header(title))
 
     def print_menu(self):
-        "Imprime el menú con estilo AS400"
-        menu_lines = [
-            "1. Ver productos variables".ljust(50) + "F1=Ayuda",
-            "2. Ver variaciones de producto".ljust(50) + "F3=Salir",
-            "0. Salir".ljust(50),
-            "=" * self.MAX_COLS
-        ]
-        for line in menu_lines:
-            print(Fore.GREEN + line[:self.MAX_COLS])
+        "Imprime el menú con estilo AS400 usando el formatter"
+        print(AS400Formatter.format_menu())
 
     def print_rows_area(self, rows):
         "Imprime un área de filas con estilo AS400, limitado a 24 filas"
@@ -36,20 +29,12 @@ class AS400UI:
             print(Fore.YELLOW + "[Más abajo...]".ljust(self.MAX_COLS))
 
     def print_row(self, data: dict):
-        "Imprime una fila con estilo AS400"
-        for k, v in data.items():
-            key = str(k)[:20].ljust(20)
-            val = str(v)[:self.MAX_COLS - 20].ljust(self.MAX_COLS - 20)
-            print(Fore.GREEN + f"{key}{val[:self.MAX_COLS - 20]}")
+        "Imprime una fila con estilo AS400 usando el formatter"
+        print(AS400Formatter.format_row(data))
 
     def print_message_area(self, message):
-        "Imprime un área de mensajes con estilo AS400"
-        print(Fore.GREEN + "=" * self.MAX_COLS)
-        if message:
-            print(Fore.YELLOW + f"{message[:self.MAX_COLS - 4].ljust(self.MAX_COLS - 4)}")
-        else:
-            print(Fore.GREEN + " " * self.MAX_COLS)
-        print(Fore.GREEN + "=" * self.MAX_COLS)
+        "Imprime un área de mensajes con estilo AS400 usando el formatter"
+        print(AS400Formatter.format_message_area(message))
 
     def print_variations_table(self, rows):
         "Imprime una tabla de variaciones con estilo AS400, limitado a 24 filas"
