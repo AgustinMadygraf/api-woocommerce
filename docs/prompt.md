@@ -14,53 +14,33 @@ Respondé como si fueras un desarrollador senior con criterio técnico.
 ---
 
 
-
-Estoy trabajando en un proyecto de software en Python, con una interfaz tipo CLI similar a AS400-IBM, y necesito incorporar la siguiente funcionalidad:
+Estoy trabajando en un proyecto de software en Python con una interfaz CLI similar a AS400-IBM. Necesito incorporar la siguiente funcionalidad:
 
 [nueva funcionalidad]
 
-Antes de implementar esta funcionalidad, realizá una auditoría técnica del proyecto (asumiendo que tenés acceso al código base y a su estructura) para evaluar si se están aplicando correctamente las siguientes prácticas de ingeniería de software:
+Antes de hacerlo, realizá una auditoría técnica del proyecto (asumiendo que tenés acceso a su estructura y propósito) para evaluar si se aplican correctamente Clean Architecture, principios SOLID, patrones de diseño y POO.
 
-- Clean Architecture
-- Principios SOLID
-- Patrones de diseño relevantes
-- Programación orientada a objetos (POO)
+Tu respuesta debe tener dos secciones:
 
-Tu respuesta debe tener **dos secciones claramente diferenciadas**:
+1. Análisis y recomendación:
+   - Evaluá el estado actual del diseño, identificando aciertos y problemas.
+   - Indicá si el proyecto está en condiciones de incorporar la nueva funcionalidad directamente o si primero es necesario realizar una refactorización.
+   - Justificá brevemente tu recomendación en base a mantenibilidad, extensibilidad y estabilidad del sistema.
 
----
+2. Plan de acción:
+   - Si recomendás refactorizar, detallá las tareas necesarias para mejorar la estructura del código sin agregar nueva funcionalidad.
+   - Si recomendás avanzar con la funcionalidad, explicá cómo implementarla de forma progresiva, sin romper el entorno productivo.
+   - En ambos casos, especificá qué archivos crear o modificar, su ubicación dentro de esta estructura:
 
-**1. Auditoría Técnica:**
-- Señalá aciertos y desviaciones respecto a las buenas prácticas mencionadas.
-- Comentá si el diseño actual favorece la mantenibilidad, extensibilidad y testabilidad.
-- Detectá posibles violaciones a la separación de capas o responsabilidades.
+src/entities/  
+src/use_cases/  
+src/interface_adapter/controllers/  
+src/interface_adapter/gateways/  
+src/interface_adapter/presenters/  
+infrastructure/cli/  
+infrastructure/fastapi/  
+infrastructure/[libreria_externa]/  
 
----
+   - Explicá brevemente la responsabilidad de cada módulo y por qué esa ubicación es la adecuada.
 
-**2. Lista de tareas (en orden de prioridad):**
-- Primero, proponé tareas de **refactorización** necesarias para corregir problemas o mejorar la estructura del código **sin añadir nueva funcionalidad**.
-- Luego, indicá tareas para **incorporar la nueva funcionalidad** de forma progresiva, sin romper el entorno productivo ni interrumpir funcionalidades existentes.
-
-Para cada tarea, especificá:
-- Qué archivo/s se deben modificar o crear
-- En qué carpeta/s deben ubicarse según esta estructura:
-
-```
-
-src/entities/
-src/use_cases/
-src/interface_adapter/controllers/
-src/interface_adapter/gateways/
-src/interface_adapter/presenters/
-infrastructure/cli/
-infrastructure/fastapi/
-infrastructure/[libreria_externa]/
-
-```
-
-- Breve justificación de su ubicación
-- Descripción de la responsabilidad del módulo
-
----
-
-Respondé como si fueras un arquitecto de software senior, con experiencia en sistemas legacy y arquitectura limpia en Python. Tus recomendaciones deben ser accionables y tener en cuenta un entorno de producción sensible.
+Respondé como un arquitecto de software senior con experiencia en sistemas legacy y arquitectura limpia en Python.
