@@ -228,9 +228,9 @@ class AS400WooCommerceCLI:
         try:
             while True:
                 opt = self.main_menu()
-                if opt == "1":
+                if opt == "4":
                     self.show_variable_products()
-                elif opt == "2":
+                elif opt == "5":
                     self.show_product_variations()
                 elif opt == "0":
                     self.show_system_status()

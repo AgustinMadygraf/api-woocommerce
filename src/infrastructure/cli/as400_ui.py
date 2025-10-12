@@ -1,10 +1,10 @@
-from src.infrastructure.cli.formatters.rich_formatter import RichFormatter
 """
 Path: src/infrastructure/cli/as400_ui.py
 """
 
 from colorama import Fore
 
+from src.infrastructure.cli.formatters.rich_formatter import RichFormatter
 from src.infrastructure.cli.formatters.as400_formatter import AS400Formatter
 
 class AS400UI:
@@ -20,8 +20,8 @@ class AS400UI:
         "Imprime el menú con estilo Rich"
         menu_items = [
             "  0. Estado del sistema",
-            "  1. Listar productos variables",
-            "  2. Listar variaciones de producto",
+            "  4. Listar productos variables (API WooCommerce)",
+            "  5. Listar variaciones de producto (API WooCommerce)",
             "  q. Salir (o F3)"
         ]
         RichFormatter.print_menu(menu_items)
