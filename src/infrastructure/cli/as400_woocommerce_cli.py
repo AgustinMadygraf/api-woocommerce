@@ -38,7 +38,7 @@ class AS400WooCommerceCLI:
                 if event.name == 'f1':
                     return 'F1'
                 elif event.name == 'f3':
-                    return '0'
+                    return 'q'
                 elif event.name.isdigit():
                     return event.name
 
@@ -84,7 +84,10 @@ class AS400WooCommerceCLI:
         t1.join()
 
         self.last_message = result_holder.get('msg', '')
-        self.ui.print_message_area(self.last_message)
+        if isinstance(self.last_message, str) and self.last_message.startswith("Error de conexión"):
+            self.ui.print_message_area(self.last_message, msg_type="error")
+        else:
+            self.ui.print_message_area(self.last_message)
         for k in ['enter', '0', '1', '2', 'f1', 'f3', 'q']:
             try:
                 keyboard.unblock_key(k)
@@ -121,7 +124,10 @@ class AS400WooCommerceCLI:
                 print(" " * max_len, end='\r')  # Limpiar línea
 
             def fetch_variations():
-                result_holder['result'] = self.controller.show_product_variations(product_id, page, per_page)
+                try:
+                    result_holder['result'] = self.controller.show_product_variations(product_id, page, per_page)
+                except (ConnectionError, TimeoutError) as e:
+                    result_holder['result'] = (f"Error de conexión: {str(e)}", 1)
                 loading_done.set()
 
             t1 = threading.Thread(target=loading_animation)
@@ -137,6 +143,11 @@ class AS400WooCommerceCLI:
                     keyboard.unblock_key(k)
                 except KeyError:
                     pass
+            # Si el resultado es un error de conexión, mostrar solo el panel de error y detener el flujo
+            if isinstance(result, tuple) and result[0].startswith("Error de conexión"):
+                self.ui.print_message_area(result[0], msg_type="error")
+                input(Fore.GREEN + "Presione ENTER para continuar...")
+                return
             if isinstance(result, tuple):
                 _, total_pages = result
             else:
@@ -202,7 +213,10 @@ class AS400WooCommerceCLI:
         t1.join()
 
         self.last_message = result_holder.get('msg', '')
-        self.ui.print_message_area(self.last_message)
+        if isinstance(self.last_message, str) and self.last_message.startswith("Error"):
+            self.ui.print_message_area(self.last_message, msg_type="error")
+        else:
+            self.ui.print_message_area(self.last_message)
         input(Fore.GREEN + "Presione ENTER para continuar...")
 
     def clear_screen(self):

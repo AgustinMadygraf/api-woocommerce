@@ -35,8 +35,11 @@ class WCApiClient:
         "Obtiene variaciones de un producto y devuelve (variaciones, código_estado, total_variaciones)"
         url = f"{self.api_base}/products/{product_id}/variations"
         params = {"page": page, "per_page": per_page}
-        response = requests.get(url, params=params, timeout=10)
-        status_code = response.status_code
-        variations = response.json() if status_code == 200 else []
-        total = int(response.headers.get("X-WP-Total", len(variations)))
-        return variations, status_code, total
+        try:
+            response = requests.get(url, params=params, timeout=10)
+            status_code = response.status_code
+            variations = response.json() if status_code == 200 else []
+            total = int(response.headers.get("X-WP-Total", len(variations)))
+            return variations, status_code, total
+        except requests.RequestException as e:
+            raise ConnectionError(f"Error de conexión: {str(e)}") from e
