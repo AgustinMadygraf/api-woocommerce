@@ -45,21 +45,54 @@ class AS400WooCommerceCLI:
 
     def show_variable_products(self):
         "Muestra productos variables desde la API de WooCommerce"
+        import time
+        import threading
         self.clear_screen()
-        print(Fore.YELLOW + "Cargando productos variables... Por favor espere.")
         keyboard.block_key('enter')
+        keyboard.block_key('0')
         keyboard.block_key('1')
         keyboard.block_key('2')
         keyboard.block_key('f1')
         keyboard.block_key('f3')
+        keyboard.block_key('q')
         self.flush_keyboard_events()
         self.flush_stdin()
-        self.last_message = self.controller.show_variable_products()
+
+        loading_done = threading.Event()
+        result_holder = {}
+
+        def loading_animation():
+            loading_base = "Cargarndo"
+            max_len = 80
+            i = 1
+            while not loading_done.is_set():
+                dots = "." * (i % (max_len - len(loading_base)))
+                line = (loading_base + dots)[:max_len]
+                print(Fore.YELLOW + line, end='\r', flush=True)
+                time.sleep(0.1)
+                i += 1
+            print(" " * max_len, end='\r')  # Limpiar línea
+
+        def fetch_products():
+            result_holder['msg'] = self.controller.show_variable_products()
+            loading_done.set()
+
+        t1 = threading.Thread(target=loading_animation)
+        t2 = threading.Thread(target=fetch_products)
+        t1.start()
+        t2.start()
+        t2.join()
+        t1.join()
+
+        self.last_message = result_holder.get('msg', '')
+        self.ui.print_message_area(self.last_message)
         keyboard.unblock_key('enter')
+        keyboard.unblock_key('0')
         keyboard.unblock_key('1')
         keyboard.unblock_key('2')
         keyboard.unblock_key('f1')
         keyboard.unblock_key('f3')
+        keyboard.unblock_key('q')
         input(Fore.GREEN + "Presione ENTER para continuar...")
 
     def show_product_variations(self):
@@ -91,7 +124,7 @@ class AS400WooCommerceCLI:
             else:
                 _, total_pages = result, 1
             print(Fore.GREEN + f"Página {page}/{total_pages}  [F7=Anterior] [F8=Siguiente] [F3=Salir]")
-            input_msg = Fore.GREEN + "Presione ENTER para continuar, F7/F8 para navegar, F3 para salir..."
+            input_msg = Fore.GREEN + "Presione ENTER para continuar, F7/F8 para navegar, F3/q para salir..."
             print(input_msg)
             while True:
                 event = keyboard.read_event()
@@ -137,9 +170,9 @@ class AS400WooCommerceCLI:
                 elif opt == "F1":
                     self.clear_screen()
                     self.ui.print_header("AYUDA")
-                    print("F1: Ayuda\nF3/0: Salir\n1: Ver productos variables\n2: Ver variaciones de producto")
+                    print("F1: Ayuda\nF3/q: Salir\n1: Ver productos variables\n2: Ver variaciones de producto")
                     input("Presione ENTER para continuar...")
-                elif opt == "0":
+                elif opt == "q":
                     self.last_message = "Gracias por usar el sistema. Hasta luego."
                     self.clear_screen()
                     self.ui.print_message_area(self.last_message)

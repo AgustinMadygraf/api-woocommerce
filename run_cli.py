@@ -1,5 +1,5 @@
 """
-CLI para consumir la API de WooCommerce con estética tipo AS400 IBM.
+Path: run_cli.py
 """
 
 import os

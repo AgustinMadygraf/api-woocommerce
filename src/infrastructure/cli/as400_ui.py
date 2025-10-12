@@ -2,8 +2,8 @@
 Path: src/infrastructure/cli/as400_ui.py
 """
 
-
 from colorama import Fore
+
 from src.infrastructure.cli.formatters.as400_formatter import AS400Formatter
 
 class AS400UI:
