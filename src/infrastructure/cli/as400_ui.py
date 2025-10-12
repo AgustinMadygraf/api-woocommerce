@@ -19,7 +19,10 @@ class AS400UI:
     def print_menu(self):
         "Imprime el menú con estilo Rich"
         menu_items = [
-            "  0. Estado del sistema",
+            "  0. Estado del sistema (API WooCommerce)",
+            "  1. Estado del sistema (Almacenamiento Local)",
+            "  2. Listar productos variables (Almacenamiento Local)",
+            "  3. Listar variaciones de producto (Almacenamiento Local)",
             "  4. Listar productos variables (API WooCommerce)",
             "  5. Listar variaciones de producto (API WooCommerce)",
             "  q. Salir (o F3)"

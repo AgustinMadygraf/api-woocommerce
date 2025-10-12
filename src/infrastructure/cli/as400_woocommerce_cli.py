@@ -228,7 +228,11 @@ class AS400WooCommerceCLI:
         try:
             while True:
                 opt = self.main_menu()
-                if opt == "4":
+                if opt == "2":
+                    self.show_variable_products_local()
+                elif opt == "3":
+                    self.show_product_variations_local()
+                elif opt == "4":
                     self.show_variable_products()
                 elif opt == "5":
                     self.show_product_variations()
@@ -250,3 +254,17 @@ class AS400WooCommerceCLI:
             self.last_message = "Interrupción detectada. Saliendo del sistema."
             self.clear_screen()
             self.ui.print_message_area(self.last_message)
+
+    def show_variable_products_local(self):
+        "Stub: Muestra productos variables desde almacenamiento local (API LocalStore)"
+        self.clear_screen()
+        self.ui.print_header("PRODUCTOS VARIABLES (Almacenamiento Local)")
+        self.ui.print_message_area("Funcionalidad pendiente: consumir /api/LocalStore/wc/v3/products?product_type=variable", msg_type="info")
+        input(Fore.GREEN + "Presione ENTER para continuar...")
+
+    def show_product_variations_local(self):
+        "Stub: Muestra variaciones de producto desde almacenamiento local (API LocalStore)"
+        self.clear_screen()
+        self.ui.print_header("VARIACIONES DE PRODUCTO (Almacenamiento Local)")
+        self.ui.print_message_area("Funcionalidad pendiente: consumir /api/LocalStore/wc/v3/products/<id>/variations", msg_type="info")
+        input(Fore.GREEN + "Presione ENTER para continuar...")
