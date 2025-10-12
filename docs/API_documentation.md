@@ -11,12 +11,15 @@ Este documento describe los endpoints expuestos por el adaptador FastAPI para Wo
 
 **Descripción:**
 Devuelve el estado actual del sistema WooCommerce.
+Los errores se gestionan con códigos HTTP y mensajes claros.
 
 ---
 
 ## Endpoints de Almacenamiento Local
 
 Los endpoints locales replican la estructura de los endpoints WooCommerce, pero bajo el prefijo `/api/LocalStore/wc/v3/`. La estructura de datos devuelta es más simple y contiene solo los campos necesarios para la operación.
+
+**Importante:** Los endpoints locales son mocks, no persisten datos ni requieren base de datos. La gestión de errores es limitada y está pendiente de mejora.
 
 ### Ejemplo de endpoints locales:
 
@@ -31,9 +34,10 @@ Los endpoints locales replican la estructura de los endpoints WooCommerce, pero 
 {
   "ID_producto_variable": int,
   "formato": string,
-  "color": string,
-  "gramaje": string,
+  "es_marron": bool,
+  "gramaje": int,
   "stock": int,
+  "estado": string,
   "ultima_actualizacion": string
 }
 ```
@@ -44,6 +48,7 @@ Los endpoints locales replican la estructura de los endpoints WooCommerce, pero 
   "id_produto_variaciones": int,
   "id_producto_variable": int,
   "es_manijas": bool,
+  "cantidad": int,
   "id_impresion": int,
   "precio_final": float,
   "ultima_actualizacion": string
@@ -59,6 +64,11 @@ Los endpoints locales replican la estructura de los endpoints WooCommerce, pero 
   "es_cara_simple": bool
 }
 ```
+
+### Limitaciones
+- Solo se soportan productos variables y sus variaciones.
+- Los endpoints locales no gestionan errores de forma detallada.
+- No hay autenticación ni seguridad en la API propia.
 
 ### Paginación
 Los endpoints locales aceptan los mismos parámetros de paginación que la API WooCommerce (`per_page`, `page`).
