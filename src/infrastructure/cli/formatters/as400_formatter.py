@@ -19,9 +19,9 @@ class AS400Formatter:
     def format_menu() -> str:
         "Formatea el menú con estilo AS400"
         menu = [
+            "  0. Estado del sistema",
             "  1. Listar productos variables",
             "  2. Listar variaciones de producto",
-            "  0. Estado del sistema",
             "  q. Salir (o F3)"
         ]
         menu_str = Fore.YELLOW + "\n".join(menu)

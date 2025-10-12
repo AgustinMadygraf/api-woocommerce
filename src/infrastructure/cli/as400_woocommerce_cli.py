@@ -29,8 +29,7 @@ class AS400WooCommerceCLI:
         self.clear_screen()
         self.ui.print_header("WOOCOMMERCE API - AS400 IBM STYLE")
         self.ui.print_menu()
-        self.ui.print_message_area(self.last_message)
-        self.last_message = ""
+    # No mostrar el último mensaje en el menú principal
 
         print("Seleccione opción (o presione F1 para ayuda, F3 para salir):")
         while True:
@@ -86,17 +85,17 @@ class AS400WooCommerceCLI:
 
         self.last_message = result_holder.get('msg', '')
         self.ui.print_message_area(self.last_message)
-        keyboard.unblock_key('enter')
-        keyboard.unblock_key('0')
-        keyboard.unblock_key('1')
-        keyboard.unblock_key('2')
-        keyboard.unblock_key('f1')
-        keyboard.unblock_key('f3')
-        keyboard.unblock_key('q')
+        for k in ['enter', '0', '1', '2', 'f1', 'f3', 'q']:
+            try:
+                keyboard.unblock_key(k)
+            except KeyError:
+                pass
         input(Fore.GREEN + "Presione ENTER para continuar...")
 
     def show_product_variations(self):
         "Muestra variaciones de un producto variable con paginación"
+        import time
+        import threading
         self.clear_screen()
         self.flush_keyboard_events()
         self.flush_stdin()
@@ -105,26 +104,45 @@ class AS400WooCommerceCLI:
         page = 1
         while True:
             self.clear_screen()
-            print(Fore.YELLOW + f"Cargando variaciones... Página {page} (F7=Anterior, F8=Siguiente, F3=Salir)")
-            keyboard.block_key('enter')
-            keyboard.block_key('f1')
-            keyboard.block_key('f3')
-            keyboard.block_key('f7')
-            keyboard.block_key('f8')
-            self.flush_keyboard_events()
-            self.flush_stdin()
-            result = self.controller.show_product_variations(product_id, page, per_page)
-            keyboard.unblock_key('enter')
-            keyboard.unblock_key('f1')
-            keyboard.unblock_key('f3')
-            keyboard.unblock_key('f7')
-            keyboard.unblock_key('f8')
+            # Animación de carga en paralelo
+            loading_done = threading.Event()
+            result_holder = {}
+
+            def loading_animation():
+                loading_base = f"Cargarndo variaciones... Página {page} "
+                max_len = 80
+                i = 1
+                while not loading_done.is_set():
+                    dots = "." * (i % (max_len - len(loading_base)))
+                    line = (loading_base + dots)[:max_len]
+                    print(Fore.YELLOW + line, end='\r', flush=True)
+                    time.sleep(0.1)
+                    i += 1
+                print(" " * max_len, end='\r')  # Limpiar línea
+
+            def fetch_variations():
+                result_holder['result'] = self.controller.show_product_variations(product_id, page, per_page)
+                loading_done.set()
+
+            t1 = threading.Thread(target=loading_animation)
+            t2 = threading.Thread(target=fetch_variations)
+            t1.start()
+            t2.start()
+            t2.join()
+            t1.join()
+
+            result = result_holder.get('result', None)
+            for k in ['enter', 'f1', 'f3', 'f7', 'f8']:
+                try:
+                    keyboard.unblock_key(k)
+                except KeyError:
+                    pass
             if isinstance(result, tuple):
                 _, total_pages = result
             else:
                 _, total_pages = result, 1
             print(Fore.GREEN + f"Página {page}/{total_pages}  [F7=Anterior] [F8=Siguiente] [F3=Salir]")
-            input_msg = Fore.GREEN + "Presione ENTER para continuar, F7/F8 para navegar, F3/q para salir..."
+            input_msg = Fore.GREEN + "Presione ENTER para continuar, F7/F8 para navegar, F3 para salir..."
             print(input_msg)
             while True:
                 event = keyboard.read_event()
@@ -139,6 +157,53 @@ class AS400WooCommerceCLI:
                         break
                     elif event.name == 'enter':
                         return
+
+    def show_system_status(self):
+        "Chequea y muestra el estado del sistema WooCommerce"
+        import time
+        import threading
+        self.clear_screen()
+        loading_done = threading.Event()
+        result_holder = {}
+
+        def loading_animation():
+            loading_base = "Chequeando estado del sistema"
+            max_len = 80
+            i = 1
+            while not loading_done.is_set():
+                dots = "." * (i % (max_len - len(loading_base)))
+                line = (loading_base + dots)[:max_len]
+                print(Fore.YELLOW + line, end='\r', flush=True)
+                time.sleep(0.1)
+                i += 1
+            print(" " * max_len, end='\r')  # Limpiar línea
+
+        def fetch_status():
+            try:
+                import requests
+                resp = requests.get(f"{self.api_base}/system_status", timeout=10)
+                if resp.status_code == 200:
+                    data = resp.json()
+                    msg = "Estado del sistema:\n"
+                    for k, v in data.items():
+                        msg += f"{k}: {v}\n"
+                else:
+                    msg = f"Error: {resp.status_code} - No se pudo obtener el estado del sistema."
+            except requests.RequestException as e:
+                msg = f"Error de conexión: {str(e)}"
+            result_holder['msg'] = msg
+            loading_done.set()
+
+        t1 = threading.Thread(target=loading_animation)
+        t2 = threading.Thread(target=fetch_status)
+        t1.start()
+        t2.start()
+        t2.join()
+        t1.join()
+
+        self.last_message = result_holder.get('msg', '')
+        self.ui.print_message_area(self.last_message)
+        input(Fore.GREEN + "Presione ENTER para continuar...")
 
     def clear_screen(self):
         "Limpia la pantalla para simular área de trabajo AS400"
@@ -167,10 +232,12 @@ class AS400WooCommerceCLI:
                     self.show_variable_products()
                 elif opt == "2":
                     self.show_product_variations()
+                elif opt == "0":
+                    self.show_system_status()
                 elif opt == "F1":
                     self.clear_screen()
                     self.ui.print_header("AYUDA")
-                    print("F1: Ayuda\nF3/q: Salir\n1: Ver productos variables\n2: Ver variaciones de producto")
+                    print("F1: Ayuda\nF3/q: Salir\n1: Ver productos variables\n2: Ver variaciones de producto\n0: Estado del sistema")
                     input("Presione ENTER para continuar...")
                 elif opt == "q":
                     self.last_message = "Gracias por usar el sistema. Hasta luego."
