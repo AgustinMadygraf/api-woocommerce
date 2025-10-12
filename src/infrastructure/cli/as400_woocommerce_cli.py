@@ -17,6 +17,25 @@ init(autoreset=True)
 
 class AS400WooCommerceCLI:
     "CLI para consumir la API de WooCommerce con estética tipo AS400 IBM."
+    def _get_valid_product_id(self):
+        "Solicita y valida el ID de producto variable. Permite salir con F3/q."
+        while True:
+            self.clear_screen()
+            self.ui.print_header("VARIACIONES DE PRODUCTO (API WooCommerce)")
+            user_input = input(Fore.GREEN + "Ingrese el ID del producto variable (F3/q para volver): ").strip()
+            if user_input.lower() in ["q", "f3"]:
+                return None
+            if user_input.isdigit():
+                product_id = int(user_input)
+                if product_id > 0:
+                    return product_id
+                else:
+                    self.ui.print_message_area("El ID debe ser un número entero mayor a cero.", msg_type="error")
+                    input(Fore.YELLOW + "Presione ENTER para intentar nuevamente...")
+            else:
+                self.ui.print_message_area("Entrada inválida. Ingrese solo números enteros positivos.", msg_type="error")
+                input(Fore.YELLOW + "Presione ENTER para intentar nuevamente...")
+
     def __init__(self, api_base: str):
         self.api_base = api_base
         self.last_message = ""
@@ -102,7 +121,9 @@ class AS400WooCommerceCLI:
         self.clear_screen()
         self.flush_keyboard_events()
         self.flush_stdin()
-        product_id = input(Fore.GREEN + "Ingrese el ID del producto variable: ").strip()
+        product_id = self._get_valid_product_id()
+        if product_id is None:
+            return  # Volver al menú principal
         per_page = 20
         page = 1
         while True:
