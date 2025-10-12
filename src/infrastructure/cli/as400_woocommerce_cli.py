@@ -37,11 +37,13 @@ class AS400WooCommerceCLI:
                 input(Fore.YELLOW + "Presione ENTER para intentar nuevamente...")
 
     def __init__(self, api_base: str):
+        from src.interface_adapter.gateways.localstore_gateway import LocalStoreGateway
         self.api_base = api_base
         self.last_message = ""
         self.ui = AS400UI()
         self.api_client: WCGateway = WCApiClient(api_base)
-        self.controller = CLIController(self.api_client, self.ui)
+        self.local_gateway = LocalStoreGateway(api_base)
+        self.controller = CLIController(self.api_client, self.ui, local_gateway=self.local_gateway)
 
     def main_menu(self):
         "Muestra el menú principal y captura la opción del usuario o teclas F1/F3"
@@ -263,7 +265,9 @@ class AS400WooCommerceCLI:
         try:
             while True:
                 opt = self.main_menu()
-                if opt == "2":
+                if opt == "1":
+                    self.show_system_status_local()
+                elif opt == "2":
                     self.show_variable_products_local()
                 elif opt == "3":
                     self.show_product_variations_local()
@@ -276,7 +280,7 @@ class AS400WooCommerceCLI:
                 elif opt == "F1":
                     self.clear_screen()
                     self.ui.print_header("AYUDA")
-                    print("F1: Ayuda\nF3/q: Salir\n1: Ver productos variables\n2: Ver variaciones de producto\n0: Estado del sistema")
+                    print("F1: Ayuda\nF3/q: Salir\n1: Estado del sistema local\n2: Productos variables locales\n3: Variaciones locales\n4: Productos variables WooCommerce\n5: Variaciones WooCommerce\n0: Estado del sistema WooCommerce")
                     input("Presione ENTER para continuar...")
                 elif opt == "q":
                     self.last_message = "Gracias por usar el sistema. Hasta luego."
@@ -291,15 +295,118 @@ class AS400WooCommerceCLI:
             self.ui.print_message_area(self.last_message)
 
     def show_variable_products_local(self):
-        "Stub: Muestra productos variables desde almacenamiento local (API LocalStore)"
+        "Muestra productos variables desde almacenamiento local (API LocalStore)"
+        import threading, time
         self.clear_screen()
-        self.ui.print_header("PRODUCTOS VARIABLES (Almacenamiento Local)")
-        self.ui.print_message_area("Funcionalidad pendiente: consumir /api/LocalStore/wc/v3/products?product_type=variable", msg_type="info")
+        self.flush_keyboard_events()
+        self.flush_stdin()
+        loading_done = threading.Event()
+        result_holder = {}
+        def loading_animation():
+            loading_base = "Cargando productos variables locales"
+            max_len = 80
+            i = 1
+            while not loading_done.is_set():
+                dots = "." * (i % (max_len - len(loading_base)))
+                line = (loading_base + dots)[:max_len]
+                print(Fore.YELLOW + line, end='\r', flush=True)
+                time.sleep(0.1)
+                i += 1
+            print(" " * max_len, end='\r')
+        def fetch_products():
+            result_holder['msg'] = self.controller.show_local_variable_products()
+            loading_done.set()
+        t1 = threading.Thread(target=loading_animation)
+        t2 = threading.Thread(target=fetch_products)
+        t1.start()
+        t2.start()
+        t2.join()
+        t1.join()
+        self.last_message = result_holder.get('msg', '')
+        self.ui.print_message_area(self.last_message)
         input(Fore.GREEN + "Presione ENTER para continuar...")
 
     def show_product_variations_local(self):
-        "Stub: Muestra variaciones de producto desde almacenamiento local (API LocalStore)"
+        "Muestra variaciones de producto desde almacenamiento local (API LocalStore)"
+        import threading, time
         self.clear_screen()
-        self.ui.print_header("VARIACIONES DE PRODUCTO (Almacenamiento Local)")
-        self.ui.print_message_area("Funcionalidad pendiente: consumir /api/LocalStore/wc/v3/products/<id>/variations", msg_type="info")
+        self.flush_keyboard_events()
+        self.flush_stdin()
+        product_id = self._get_valid_product_id()
+        if product_id is None:
+            return
+        per_page = 20
+        page = 1
+        while True:
+            self.clear_screen()
+            loading_done = threading.Event()
+            result_holder = {}
+            def loading_animation():
+                loading_base = f"Cargando variaciones locales... Página {page} "
+                max_len = 80
+                i = 1
+                while not loading_done.is_set():
+                    dots = "." * (i % (max_len - len(loading_base)))
+                    line = (loading_base + dots)[:max_len]
+                    print(Fore.YELLOW + line, end='\r', flush=True)
+                    time.sleep(0.1)
+                    i += 1
+                print(" " * max_len, end='\r')
+            def fetch_variations():
+                result_holder['msg'] = self.controller.show_local_product_variations(product_id, page, per_page)
+                loading_done.set()
+            t1 = threading.Thread(target=loading_animation)
+            t2 = threading.Thread(target=fetch_variations)
+            t1.start()
+            t2.start()
+            t2.join()
+            t1.join()
+            self.last_message = result_holder.get('msg', '')
+            self.ui.print_message_area(self.last_message)
+            print(Fore.GREEN + f"Página {page}  [F7=Anterior] [F8=Siguiente] [F3=Salir]")
+            input_msg = Fore.GREEN + "Presione ENTER para continuar, F7/F8 para navegar, F3 para salir..."
+            print(input_msg)
+            while True:
+                event = keyboard.read_event()
+                if event.event_type == keyboard.KEY_DOWN:
+                    if event.name == 'f3':
+                        return
+                    elif event.name == 'f7' and page > 1:
+                        page -= 1
+                        break
+                    elif event.name == 'f8':
+                        page += 1
+                        break
+                    elif event.name == 'enter':
+                        return
+    def show_system_status_local(self):
+        "Muestra el estado del sistema local (API LocalStore)"
+        import threading, time
+        self.clear_screen()
+        self.flush_keyboard_events()
+        self.flush_stdin()
+        loading_done = threading.Event()
+        result_holder = {}
+        def loading_animation():
+            loading_base = "Chequeando estado del sistema local"
+            max_len = 80
+            i = 1
+            while not loading_done.is_set():
+                dots = "." * (i % (max_len - len(loading_base)))
+                line = (loading_base + dots)[:max_len]
+                print(Fore.YELLOW + line, end='\r', flush=True)
+                time.sleep(0.1)
+                i += 1
+            print(" " * max_len, end='\r')
+        def fetch_status():
+            result_holder['msg'] = self.controller.show_local_system_status()
+            loading_done.set()
+        t1 = threading.Thread(target=loading_animation)
+        t2 = threading.Thread(target=fetch_status)
+        t1.start()
+        t2.start()
+        t2.join()
+        t1.join()
+        self.last_message = result_holder.get('msg', '')
+        self.ui.print_message_area(self.last_message)
         input(Fore.GREEN + "Presione ENTER para continuar...")

@@ -19,6 +19,67 @@ logger = get_logger("woocommerce-adapter")
 
 logger.info("Inicializando el router de WooCommerce Adapter")
 
+
+@router.get("/api/LocalStore/wc/v3/products")
+def local_products(per_page: int = Query(10, ge=1, le=100), page: int = Query(1, ge=1)):
+    "Endpoint local para obtener productos variables (mock)"
+    productos = [
+        {
+            "ID_producto_variable": 1228,
+            "formato": "12x08x19",
+            "es_marron": True,
+            "gramaje": 100,
+            "stock": 54819,
+            "estado": "publish",
+            "ultima_actualizacion": "2025-10-12T10:00:00"
+        },
+        {
+            "ID_producto_variable": 773,
+            "formato": "16x10x24",
+            "es_marron": True,
+            "gramaje": 100,
+            "stock": 80328,
+            "estado": "publish",
+            "ultima_actualizacion": "2025-10-12T10:00:00"
+        }
+    ]
+    # Paginación simple
+    start = (page - 1) * per_page
+    end = start + per_page
+    return productos[start:end]
+
+@router.get("/api/LocalStore/wc/v3/products/{product_variable_id}/variations")
+def local_product_variations(product_variable_id: int, per_page: int = Query(10, ge=1, le=100), page: int = Query(1, ge=1)):
+    "Endpoint local para obtener variaciones de producto (mock)"
+    variaciones = [
+        {
+            "id_produto_variaciones": 773,
+            "id_producto_variable": product_variable_id,
+            "es_manijas": True,
+            "cantidad": 100,
+            "id_impresion": 0,
+            "precio_final": 123.45,
+            "ultima_actualizacion": "2025-10-12T10:00:00"
+        },
+        {
+            "id_produto_variaciones": 773,
+            "id_producto_variable": product_variable_id,
+            "es_manijas": True,
+            "cantidad": 200,
+            "id_impresion": 0,
+            "precio_final": 99.99,
+            "ultima_actualizacion": "2025-10-12T10:00:00"
+        }
+    ]
+    start = (page - 1) * per_page
+    end = start + per_page
+    return variaciones[start:end]
+
+@router.get("/api/LocalStore/wc/v3/system_status")
+def local_system_status():
+    "Endpoint local para obtener estado del sistema (mock)"
+    return {"db_status": "ok", "ultima_actualizacion": "2025-10-12T10:00:00"}
+
 @router.get("/api/wp-json/wc/v3/system_status")
 def wc_system_status():
     "Endpoint para obtener el estado del sistema WooCommerce"

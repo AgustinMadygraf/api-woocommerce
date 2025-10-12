@@ -9,6 +9,14 @@ from src.infrastructure.cli.formatters.as400_formatter import AS400Formatter
 
 class AS400UI:
     "Funciones de presentación con estilo AS400 IBM."
+    def print_dict(self, data: dict):
+        "Imprime un diccionario clave-valor con formato AS400/Rich"
+        if not data:
+            self.print_message_area("Sin datos para mostrar.", msg_type="warning")
+            return
+        for k, v in data.items():
+            self.print_row({k: v})
+            print(Fore.GREEN + "-" * self.MAX_COLS)
     MAX_COLS = 80
     MAX_ROWS = 24
 
