@@ -26,5 +26,8 @@ def get_config():
         "MYSQL_USER": os.getenv("MYSQL_USER"),
         "MYSQL_PASSWORD": os.getenv("MYSQL_PASSWORD"),
         "MYSQL_DATABASE": os.getenv("MYSQL_DATABASE"),
+
+        # --- API Base URL ---
+        "API_BASE": os.getenv("API_BASE"),
     }
     return config

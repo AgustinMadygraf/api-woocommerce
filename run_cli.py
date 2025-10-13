@@ -2,11 +2,11 @@
 Path: run_cli.py
 """
 
-import os
-
 from src.infrastructure.cli.as400_woocommerce_cli import AS400WooCommerceCLI
+from src.shared.config import get_config
 
-API_BASE = os.getenv("API_BASE", "http://localhost:5000/api/wp-json/wc/v3")
+config = get_config()
+API_BASE = config.get("API_BASE")+"/api/wp-json/wc/v3"
 
 
 if __name__ == "__main__":
